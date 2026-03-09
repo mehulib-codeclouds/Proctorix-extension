@@ -1,8 +1,10 @@
 {
 	"words": [
+		"bunx",
 		"Configify",
 		"itgorillaz",
-		"proctorix"
+		"proctorix",
+		"timestamptz"
 	],
 	"useGitignore": true,
 	"ignorePaths": [

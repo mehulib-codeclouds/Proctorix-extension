@@ -1,5 +1,25 @@
 {
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "name": "@proctorix/api",
-  "projectType": "application"
+  "projectType": "application",
+  "targets": {
+    "migration:generate": {
+      "options": {
+        "cwd": "{projectRoot}"
+      },
+      "command": "bun typeorm migration:generate ./db/migrations/{args.name}"
+    },
+    "migration:show": {
+      "options": {
+        "cwd": "{projectRoot}"
+      },
+      "command": "bun typeorm migration:show"
+    },
+    "migration:run": {
+      "options": {
+        "cwd": "{projectRoot}"
+      },
+      "command": "bun typeorm migration:run"
+    }
+  }
 }
