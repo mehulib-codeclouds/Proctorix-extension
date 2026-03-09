@@ -1,0 +1,34 @@
+{
+  "name": "Proctorix",
+  "dockerComposeFile": "docker-compose.yml",
+  "service": "devcontainer",
+  "workspaceFolder": "/workspace",
+  "features": {
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "24.13.0"
+    },
+    "ghcr.io/devcontainers-extra/features/bun:1": {
+      "version": "1.3.8"
+    },
+    "ghcr.io/thediveo/devcontainer-features/lazygit:0": {
+      "version": "v0.58.1"
+    }
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "biomejs.biome",
+        "ChaitanyaShahare.lazygit",
+        "christian-kohler.path-intellisense",
+        "formulahendry.auto-close-tag",
+        "formulahendry.auto-rename-tag",
+        "ms-azuretools.vscode-containers",
+        "pmneo.tsimporter",
+        "Prisma.prisma",
+        "sleistner.vscode-fileutils",
+        "streetsidesoftware.code-spell-checker",
+        "tamasfe.even-better-toml"
+      ]
+    }
+  }
+}

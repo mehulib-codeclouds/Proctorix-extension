@@ -1,0 +1,12 @@
+{
+	"words": [
+		"Configify",
+		"itgorillaz",
+		"proctorix"
+	],
+	"useGitignore": true,
+	"ignorePaths": [
+		"node_modules",
+		"dist"
+	]
+}
