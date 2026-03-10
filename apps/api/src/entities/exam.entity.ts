@@ -53,7 +53,7 @@ export class Exam {
 
   @ManyToOne(
     () => User,
-    (user) => user.sessions,
+    (user) => user.exams,
     { nullable: false, onDelete: 'CASCADE' },
   )
   @JoinColumn({ name: 'created_by_id' })
