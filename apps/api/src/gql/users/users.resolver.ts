@@ -8,14 +8,12 @@ import {
   Resolver,
 } from '@nestjs/graphql';
 import { CurrentUser } from '/auth/decorators/current-user.decorator';
-import { Roles } from '/auth/decorators/roles.decorator';
 import { AuthGuard } from '/auth/guards/auth.guard';
-import { RolesGuard } from '/auth/guards/roles.guard';
 import { UsersService } from '/auth/users/users.service';
 import { Attempt } from '/entities/attempt.entity';
 import { Exam } from '/entities/exam.entity';
 import { Session } from '/entities/session.entity';
-import { User, UserRole } from '/entities/user.entity';
+import { User } from '/entities/user.entity';
 import { CreateUserInput } from './inputs/create-user.input';
 import { UpdateUserInput } from './inputs/update-user.input';
 
@@ -72,21 +70,5 @@ export class UsersResolver {
     @CurrentUser() user: User,
   ) {
     return this.usersService.update(updateUserData, user);
-  }
-
-  @Mutation(() => User, { nullable: true })
-  @UseGuards(AuthGuard)
-  async deleteUser(@Args('id') id: string, @CurrentUser() user: User) {
-    return this.usersService.delete(id, user);
-  }
-
-  @Mutation(() => [User])
-  @UseGuards(AuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN)
-  async batchDeleteUsers(
-    @Args('ids', { type: () => [String] }) ids: string[],
-    @CurrentUser() user: User,
-  ) {
-    return this.usersService.deleteMany(ids, user);
   }
 }

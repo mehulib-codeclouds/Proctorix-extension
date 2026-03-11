@@ -21,14 +21,19 @@ export class UsersService {
     return await this.usersRepository.find();
   }
 
-  async create({ name, email, password, role, isVerified }: {
-    name: string,
-    email: string,
-    password?: string | null,
-    role?: UserRole | undefined,
-    isVerified?: boolean | undefined,
+  async create({
+    name,
+    email,
+    password,
+    role,
+    isVerified,
+  }: {
+    name: string;
+    email: string;
+    password?: string | null;
+    role?: UserRole | undefined;
+    isVerified?: boolean | undefined;
   }) {
-
     const user = this.usersRepository.create({
       name,
       email,
@@ -42,14 +47,16 @@ export class UsersService {
   }
 
   async update(
-    input: { 
-      id: string,
-      name?: string | undefined,
-      email?: string | undefined,
-      password?: string | null,
-      role?: UserRole | undefined,
-      isVerified?: boolean | undefined
-    }, user: User) {
+    input: {
+      id: string;
+      name?: string | undefined;
+      email?: string | undefined;
+      password?: string | null;
+      role?: UserRole | undefined;
+      isVerified?: boolean | undefined;
+    },
+    user: User,
+  ) {
     const { id, name, email, password, role, isVerified } = input;
 
     const userToUpdate = await this.findOne({ id });
@@ -57,24 +64,21 @@ export class UsersService {
     if (!userToUpdate) return null;
 
     // CHECK IF THE USER TRYING TO EDIT IS SELF, AND HAS SUFFICIENT PERMISSIONS
-    if (
-      id !== user.id &&
-      user.role !== UserRole.ADMIN
-    ) {
+    if (id !== user.id && user.role !== UserRole.ADMIN) {
       return null;
     }
 
     if (name !== undefined) userToUpdate.name = name;
-    
+
     if (email !== undefined) userToUpdate.email = email;
-    
+
     if (password !== undefined) {
       userToUpdate.password = password === null ? null : await hash(password);
     }
 
-    if (role !== undefined) userToUpdate.role = role
+    if (role !== undefined) userToUpdate.role = role;
 
-    if (isVerified !== undefined) userToUpdate.isVerified = isVerified
+    if (isVerified !== undefined) userToUpdate.isVerified = isVerified;
 
     return await this.usersRepository.save(userToUpdate);
   }
