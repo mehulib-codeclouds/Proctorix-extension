@@ -33,6 +33,7 @@ import { User } from './entities/user.entity';
           MsqAnswer,
           AttemptMcqAnswer,
           AttemptMsqAnswer,
+
         ],
       }),
       inject: [AppConfiguration],
