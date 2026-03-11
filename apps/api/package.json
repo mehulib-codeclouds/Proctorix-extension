@@ -9,6 +9,7 @@
     "typeorm": "bunx ts-node -P ./tsconfig.json -r tsconfig-paths/register ./node_modules/typeorm/cli.js -d ./db/data-source.ts"
   },
   "devDependencies": {
+    "@nestjs/cli": "^11.0.16",
     "@types/bun": "1.3.8",
     "ts-node": "^10.9.2",
     "tsconfig-paths": "^4.2.0"
