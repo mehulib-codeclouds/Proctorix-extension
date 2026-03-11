@@ -21,13 +21,11 @@ export class AuthGuard implements CanActivate {
 
     const { req } = gqlExecutionContext.getContext<{ req: FastifyRequest }>();
 
-    // CHECK IF THE AUTHORIZATION TOKEN EVEN EXISTS
     const authHeader = req.headers.authorization;
     if (!authHeader) {
       return false;
     }
 
-    // CHECK IF THE AUTH TOKEN EXISTS IN THE CORRECT FORMAT
     const parts = authHeader.split(' ');
     if (parts.length !== 2) {
       return false;
@@ -35,7 +33,6 @@ export class AuthGuard implements CanActivate {
 
     const [type, token] = parts;
 
-    // CHECK IF THE SENT TOKEN IS A BEARER TOKEN, AND THE SENT TOKEN IS AN ACTUAL TOKEN
     if (type !== 'Bearer' || !token) {
       return false;
     }

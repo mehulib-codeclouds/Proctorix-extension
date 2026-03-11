@@ -18,7 +18,6 @@ import { Session } from '/entities/session.entity';
 import { User, UserRole } from '/entities/user.entity';
 import { CreateUserInput } from './inputs/create-user.input';
 import { UpdateUserInput } from './inputs/update-user.input';
-import { UserFindManyType } from './inputs/users-query.input';
 
 @Resolver(() => User)
 export class UsersResolver {
@@ -26,12 +25,6 @@ export class UsersResolver {
     @Inject(UsersService) private readonly usersService: UsersService,
   ) {}
 
-  @Query(() => String)
-  health() {
-    return 'ok';
-  }
-
-  // LOADING SESSIONS RELATION
   @ResolveField(() => [Session])
   async sessions(@Parent() user: User) {
     const { id } = user;
@@ -39,7 +32,6 @@ export class UsersResolver {
     // return this.sessionsService.findMany({ userId: id });
   }
 
-  // LOADING EXAMS RELATION
   @ResolveField(() => [Exam])
   async exams(@Parent() user: User) {
     const { id } = user;
@@ -47,7 +39,6 @@ export class UsersResolver {
     // return this.examsService.findMany({ userId: id });
   }
 
-  // LOADING ATTEMPTS RELATION
   @ResolveField(() => [Attempt])
   async attempts(@Parent() user: User) {
     const { id } = user;
@@ -55,22 +46,16 @@ export class UsersResolver {
     // return this.attemptsService.findMany({ userId: id });
   }
 
-  // QUERY FOR GETTING USER BY ID
   @Query(() => User, { nullable: true })
   async user(@Args('id') id?: string) {
     return this.usersService.findOne({ id });
   }
 
-  // QUERY FOR GETTING USERS, SORTING, FILTERING, PAGINATION
   @Query(() => [User])
-  async users(
-    @Args('query', { type: () => UserFindManyType, nullable: true })
-    query?: UserFindManyType,
-  ) {
-    return this.usersService.findMany(query);
+  async users() {
+    return this.usersService.findMany();
   }
 
-  // MUTATION FOR CREATING A USER
   @Mutation(() => User)
   async createUser(
     @Args('createUserData', { type: () => CreateUserInput })
@@ -79,27 +64,22 @@ export class UsersResolver {
     return this.usersService.create(createUserData);
   }
 
-  // MUTATION FOR UPDATING A USER
   @Mutation(() => User, { nullable: true })
   @UseGuards(AuthGuard)
   async updateUser(
-    @Args('updateUserData', { type: () => UpdateUserInput }) updateUserData: UpdateUserInput,
+    @Args('updateUserData', { type: () => UpdateUserInput })
+    updateUserData: UpdateUserInput,
     @CurrentUser() user: User,
   ) {
     return this.usersService.update(updateUserData, user);
   }
 
-  // MUTATION FOR DELETING A USER BY ID
   @Mutation(() => User, { nullable: true })
   @UseGuards(AuthGuard)
-  async deleteUser(
-    @Args('id') id: string,
-    @CurrentUser() user: User,
-  ) {
+  async deleteUser(@Args('id') id: string, @CurrentUser() user: User) {
     return this.usersService.delete(id, user);
   }
 
-  // MUTATION FOR DELETING MULTIPLE USERS BY IDS
   @Mutation(() => [User])
   @UseGuards(AuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN)

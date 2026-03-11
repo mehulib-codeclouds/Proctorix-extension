@@ -45,7 +45,7 @@ import { GqlModule } from './gql/gql.module';
       driver: ApolloDriver,
       useFactory: (appConfiguration: AppConfiguration) => ({
         playground: appConfiguration.nodeEnv === 'dev',
-        autoSchemaFile: "schema.gql"
+        autoSchemaFile: true
       }),
       inject: [AppConfiguration],
     }),

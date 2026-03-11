@@ -9,13 +9,11 @@ export class RolesGuard implements CanActivate {
   constructor(private reflector: Reflector) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    // CHECK IF ROLES IS ACTIALLY PASSED, LOOK FOR ROLES FROM METHOD AND CLASS BOTH, OVERRIDE IF NEEDED
     const allowedRoles = this.reflector.getAllAndOverride<UserRole[]>(
       ROLES_KEY,
       [context.getHandler(), context.getClass()],
     );
 
-    // IF ROLES IS NOT PASSED AT ALL, ALLOW ACCESS
     if (!allowedRoles) {
       return true;
     }
@@ -24,13 +22,11 @@ export class RolesGuard implements CanActivate {
 
     const { req } = gqlExecutionContext.getContext<{ req: FastifyRequest }>();
 
-    // RETRIEVE THE USER OBJECT FROM THE REQUEST
     const user = req.user;
     if (!user) {
       return false;
     }
 
-    // CHECK IF THE ROLE EXISTS, AND HAS SUFFICIENT PERMISSIONS
     if (!user.role || !allowedRoles.includes(user.role)) {
       return false;
     }
