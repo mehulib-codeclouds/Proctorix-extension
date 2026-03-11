@@ -1,6 +1,9 @@
 import { ConfigifyModule } from '@itgorillaz/configify';
+import { ApolloDriver, type ApolloDriverConfig } from '@nestjs/apollo';
 import { Module } from '@nestjs/common';
+import { GraphQLModule } from '@nestjs/graphql';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { AuthModule } from './auth/auth.module';
 import { AppConfiguration } from './config/app.config';
 import { Attempt } from './entities/attempt.entity';
 import { AttemptMcqAnswer } from './entities/attempt-mcq-answer.entity';
@@ -13,6 +16,7 @@ import { MsqOption } from './entities/msq-option.entity';
 import { Question } from './entities/question.entity';
 import { Session } from './entities/session.entity';
 import { User } from './entities/user.entity';
+import { GqlModule } from './gql/gql.module';
 
 @Module({
   imports: [
@@ -37,6 +41,16 @@ import { User } from './entities/user.entity';
       }),
       inject: [AppConfiguration],
     }),
+    GraphQLModule.forRootAsync<ApolloDriverConfig>({
+      driver: ApolloDriver,
+      useFactory: (appConfiguration: AppConfiguration) => ({
+        playground: appConfiguration.nodeEnv === 'dev',
+        autoSchemaFile: true
+      }),
+      inject: [AppConfiguration],
+    }),
+    GqlModule,
+    AuthModule,
   ],
 })
 export class AppModule {}
