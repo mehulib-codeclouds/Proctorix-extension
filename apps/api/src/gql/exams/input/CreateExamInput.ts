@@ -10,7 +10,7 @@ export class CreateExamInput {
   description: string;
 
   @Field(() => Int, { nullable: true })
-  durationMinutes?: number;
+  durationMinutes?: number | null;
 
   @Field()
   startTime: Date;
@@ -19,7 +19,7 @@ export class CreateExamInput {
   endTime: Date;
 
   @Field(() => Int, { nullable: true })
-  passingMarks?: number;
+  passingMarks?: number | null;
 
   @Field(() => Int)
   attemptsAllowed: number;

@@ -2,6 +2,7 @@ import { Field, InputType, Int } from '@nestjs/graphql';
 
 @InputType()
 export class UpdateExamInput {
+
   @Field({ nullable: true })
   title?: string;
 
@@ -9,7 +10,7 @@ export class UpdateExamInput {
   description?: string;
 
   @Field(() => Int, { nullable: true })
-  durationMinutes?: number;
+  durationMinutes?: number | null;
 
   @Field({ nullable: true })
   startTime?: Date;
@@ -18,7 +19,7 @@ export class UpdateExamInput {
   endTime?: Date;
 
   @Field(() => Int, { nullable: true })
-  passingMarks?: number;
+  passingMarks?: number | null;
 
   @Field(() => Int, { nullable: true })
   attemptsAllowed?: number;
