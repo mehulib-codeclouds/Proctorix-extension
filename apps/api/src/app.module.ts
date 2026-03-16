@@ -3,6 +3,7 @@ import { ApolloDriver, type ApolloDriverConfig } from '@nestjs/apollo';
 import { Module } from '@nestjs/common';
 import { GraphQLModule } from '@nestjs/graphql';
 import { TypeOrmModule } from '@nestjs/typeorm';
+
 import { AuthModule } from './auth/auth.module';
 import { AppConfiguration } from './config/app.config';
 import { Attempt } from './entities/attempt.entity';
@@ -21,6 +22,7 @@ import { GqlModule } from './gql/gql.module';
 @Module({
   imports: [
     ConfigifyModule.forRootAsync(),
+
     TypeOrmModule.forRootAsync({
       useFactory: (appConfiguration: AppConfiguration) => ({
         type: 'postgres',
@@ -41,15 +43,19 @@ import { GqlModule } from './gql/gql.module';
       }),
       inject: [AppConfiguration],
     }),
+
     GraphQLModule.forRootAsync<ApolloDriverConfig>({
       driver: ApolloDriver,
       useFactory: (appConfiguration: AppConfiguration) => ({
         playground: appConfiguration.nodeEnv === 'dev',
-        autoSchemaFile: true
+        autoSchemaFile: true,
+        context: ({ request }) => ({ req: request }),
       }),
       inject: [AppConfiguration],
     }),
+
     GqlModule,
+
     AuthModule,
   ],
 })
