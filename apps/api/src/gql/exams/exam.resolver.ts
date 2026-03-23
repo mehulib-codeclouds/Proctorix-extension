@@ -13,15 +13,15 @@ import { UpdateExamInput } from './input/UpdateExamInput';
 
 @Resolver(() => Exam)
 export class ExamsResolver {
- constructor(
-   @Inject(ExamsService) private readonly examsService: ExamsService,
- ) {}
+  constructor(
+    @Inject(ExamsService) private readonly examsService: ExamsService,
+  ) {}
 
 
 
 
- @Query(() => [Exam])
-@UseGuards(AuthGuard)
+  @Query(() => [Exam])
+  @UseGuards(AuthGuard)
 async exams(
  @Context() context: { req: { user: User } },
 ): Promise<Exam[]> {
@@ -30,34 +30,34 @@ async exams(
  const user = context.req.user;
 
 
- return this.examsService.getExams({
-   userId: user.id,
-   role: user.role,
- });
-}
+    return this.examsService.getExams({
+      userId: user.id,
+      role: user.role,
+    });
+  }
 
 
 
 
 
 
- @Query(() => Exam)
-@UseGuards(AuthGuard)
-async getExamById(
- @Args('id', { type: () => ID }) id: string,
- @Context() context: { req: { user: User } },
-): Promise<Exam> {
+  @Query(() => Exam)
+  @UseGuards(AuthGuard)
+  async getExamById(
+    @Args('id', { type: () => ID }) id: string,
+    @Context() context: { req: { user: User } },
+  ): Promise<Exam> {
 
 
  const user = context.req.user;
 
 
- return this.examsService.getExamById({
-   id,
-   userId: user.id,
-   role: user.role,
- });
-}
+    return this.examsService.getExamById({
+      id,
+      userId: user.id,
+      role: user.role,
+    });
+  }
 
 
 
@@ -73,88 +73,88 @@ async getExamById(
 
 
   @Mutation(() => Exam)
- @UseGuards(AuthGuard)
- async createExam(
-   @Args('input', { type: () => CreateExamInput }) input: CreateExamInput,
-   @Context() context: { req: { user: User } },
- ): Promise<Exam> {
+  @UseGuards(AuthGuard)
+  async createExam(
+    @Args('input', { type: () => CreateExamInput }) input: CreateExamInput,
+    @Context() context: { req: { user: User } },
+  ): Promise<Exam> {
    const user = context.req.user;
 
 
-   return this.examsService.createExam({
-     title: input.title,
-     description: input.description,
-     durationMinutes: input.durationMinutes,
-     startTime: input.startTime,
-     endTime: input.endTime,
-     passingMarks: input.passingMarks,
-     attemptsAllowed: input.attemptsAllowed,
-     userId: user.id,
-     role: user.role,
-   });
- }
+    return this.examsService.createExam({
+      title: input.title,
+      description: input.description,
+      durationMinutes: input.durationMinutes,
+      startTime: input.startTime,
+      endTime: input.endTime,
+      passingMarks: input.passingMarks,
+      attemptsAllowed: input.attemptsAllowed,
+      userId: user.id,
+      role: user.role,
+    });
+  }
 
 
- @Mutation(() => Exam)
- @UseGuards(AuthGuard)
- async updateExam(
-   @Args('id', { type: () => ID }) id: string,
-   @Args('input', { type: () => UpdateExamInput }) input: UpdateExamInput,
-   @Context() context: { req: { user: User } },
- ): Promise<Exam> {
+  @Mutation(() => Exam)
+  @UseGuards(AuthGuard)
+  async updateExam(
+    @Args('id', { type: () => ID }) id: string,
+    @Args('input', { type: () => UpdateExamInput }) input: UpdateExamInput,
+    @Context() context: { req: { user: User } },
+  ): Promise<Exam> {
    const user = context.req.user;
 
 
-   return this.examsService.updateExam({
-     id,
-     title: input.title,
-     description: input.description,
-     durationMinutes: input.durationMinutes,
-     startTime: input.startTime,
-     endTime: input.endTime,
-     passingMarks: input.passingMarks,
-     attemptsAllowed: input.attemptsAllowed,
-     userId: user.id,
-     role: user.role,
-   });
- }
+    return this.examsService.updateExam({
+      id,
+      title: input.title,
+      description: input.description,
+      durationMinutes: input.durationMinutes,
+      startTime: input.startTime,
+      endTime: input.endTime,
+      passingMarks: input.passingMarks,
+      attemptsAllowed: input.attemptsAllowed,
+      userId: user.id,
+      role: user.role,
+    });
+  }
 
 
- @Mutation(() => Boolean)
- @UseGuards(AuthGuard)
- async deleteExam(
-   @Args('id', { type: () => ID }) id: string,
-   @Context() context: { req: { user: User } },
- ): Promise<boolean> {
-   const user = context.req.user;
+  @Mutation(() => Boolean)
+  @UseGuards(AuthGuard)
+  async deleteExam(
+    @Args('id', { type: () => ID }) id: string,
+    @Context() context: { req: { user: User } },
+  ): Promise<boolean> {
+    const user = context.req.user;
 
 
-   return this.examsService.deleteExam({
-     id,
-     userId: user.id,
-     role: user.role,
-   });
- }
+    return this.examsService.deleteExam({
+      id,
+      userId: user.id,
+      role: user.role,
+    });
+  }
 
 
- @Mutation(() => Boolean)
- @UseGuards(AuthGuard)
- async deleteManyExams(
-   @Args('input', { type: () => DeleteManyExamsInput })
-   input: DeleteManyExamsInput,
+  @Mutation(() => Boolean)
+  @UseGuards(AuthGuard)
+  async deleteManyExams(
+    @Args('input', { type: () => DeleteManyExamsInput })
+    input: DeleteManyExamsInput,
 
 
-   @Context() context: { req: { user: User } },
- ): Promise<boolean> {
-   const user = context.req.user;
+    @Context() context: { req: { user: User } },
+  ): Promise<boolean> {
+    const user = context.req.user;
 
 
-   return this.examsService.deleteManyExams({
-     ids: input.ids,
-     userId: user.id,
-     role: user.role,
-   });
- }
+    return this.examsService.deleteManyExams({
+      ids: input.ids,
+      userId: user.id,
+      role: user.role,
+    });
+  }
 }
 
 

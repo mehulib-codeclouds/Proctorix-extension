@@ -23,12 +23,17 @@ export class MsqOption {
   @Field()
   id: string;
 
+  @Column({ name: 'text', type: 'text', nullable: false })
+  @Field()
+  text: string;
+
   @Column({ name: 'has_partial_marking', nullable: false })
+  @Field()
   hasPartialMarking: boolean;
 
   @ManyToOne(
     () => Question,
-    (question) => question.mcqOptions,
+    (question) => question.msqOptions,
     { nullable: false, onDelete: 'CASCADE' },
   )
   @JoinColumn({ name: 'question_id' })
@@ -41,11 +46,11 @@ export class MsqOption {
     () => MsqAnswer,
     (msqAnswer) => msqAnswer.option,
   )
-  answers: Relation<MsqAnswer>;
+  answers: Relation<MsqAnswer>[];
 
   @OneToMany(
     () => AttemptMsqAnswer,
-    (attemptMsqAnswer) => attemptMsqAnswer.attempt,
+    (attemptMsqAnswer) => attemptMsqAnswer.option,
   )
   attemptMsqAnswers: Relation<AttemptMsqAnswer>[];
 
