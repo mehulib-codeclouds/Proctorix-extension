@@ -21,7 +21,7 @@ export class ExamsResolver {
 
 
   @Query(() => [Exam])
-  @UseGuards(AuthGuard)
+  // @UseGuards(AuthGuard)
 async exams(
  @Context() context: { req: { user: User } },
 ): Promise<Exam[]> {
@@ -42,7 +42,7 @@ async exams(
 
 
   @Query(() => Exam)
-  @UseGuards(AuthGuard)
+  // @UseGuards(AuthGuard)
   async getExamById(
     @Args('id', { type: () => ID }) id: string,
     @Context() context: { req: { user: User } },
@@ -73,7 +73,7 @@ async exams(
 
 
   @Mutation(() => Exam)
-  @UseGuards(AuthGuard)
+  // @UseGuards(AuthGuard)
   async createExam(
     @Args('input', { type: () => CreateExamInput }) input: CreateExamInput,
     @Context() context: { req: { user: User } },
@@ -96,7 +96,7 @@ async exams(
 
 
   @Mutation(() => Exam)
-  @UseGuards(AuthGuard)
+  // @UseGuards(AuthGuard)
   async updateExam(
     @Args('id', { type: () => ID }) id: string,
     @Args('input', { type: () => UpdateExamInput }) input: UpdateExamInput,
@@ -121,7 +121,7 @@ async exams(
 
 
   @Mutation(() => Boolean)
-  @UseGuards(AuthGuard)
+  // @UseGuards(AuthGuard)
   async deleteExam(
     @Args('id', { type: () => ID }) id: string,
     @Context() context: { req: { user: User } },
@@ -138,7 +138,7 @@ async exams(
 
 
   @Mutation(() => Boolean)
-  @UseGuards(AuthGuard)
+  // @UseGuards(AuthGuard)
   async deleteManyExams(
     @Args('input', { type: () => DeleteManyExamsInput })
     input: DeleteManyExamsInput,

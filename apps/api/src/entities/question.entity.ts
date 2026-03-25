@@ -1,4 +1,4 @@
-import { Field, Int, ObjectType } from '@nestjs/graphql';
+import { Field, Int, ObjectType, registerEnumType } from '@nestjs/graphql';
 import {
   Column,
   CreateDateColumn,
@@ -25,6 +25,10 @@ export enum QuestionType {
   MSQ = 'msq',
 }
 
+registerEnumType(QuestionType, {
+  name: 'QuestionType',
+});
+
 @Entity('questions')
 @ObjectType()
 export class Question {
@@ -38,11 +42,12 @@ export class Question {
   text: string;
 
   @Column({
-    name: 'type',
-    type: 'enum',
-    enum: QuestionType,
-    nullable: false,
-  })
+  name: 'type',
+  type: 'enum',
+  enum: QuestionType,
+  enumName: 'questions_type_enum',
+})
+  @Field(() => QuestionType)
   type: QuestionType;
 
   @Column({ name: 'duration_minutes', type: 'integer', nullable: true })
@@ -69,28 +74,28 @@ export class Question {
     () => McqOption,
     (mcqOption) => mcqOption.question,
   )
-  @Field(() => [McqOption], { nullable: true })
+  @Field(() => [McqOption])
   mcqOptions: Relation<McqOption>[];
 
   @OneToMany(
     () => MsqOption,
     (msqOption) => msqOption.question,
   )
-  @Field(() => [MsqOption], { nullable: true })
+  @Field(() => [MsqOption])
   msqOptions: Relation<MsqOption>[];
 
   @OneToOne(
     () => McqAnswer,
     (mcqAnswer) => mcqAnswer.question,
   )
-  @Field(() => McqAnswer, { nullable: true })
+  @Field(() => McqAnswer)
   mcqAnswer: Relation<McqAnswer>;
 
   @OneToMany(
     () => MsqAnswer,
     (msqAnswer) => msqAnswer.question,
   )
-  @Field(() => [MsqAnswer], { nullable: true })
+  @Field(() => [MsqAnswer])
   msqAnswers: Relation<MsqAnswer>[];
 
   @OneToMany(

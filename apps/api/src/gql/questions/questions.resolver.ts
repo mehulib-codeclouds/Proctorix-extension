@@ -3,7 +3,7 @@ import { Inject, ParseUUIDPipe, UseGuards } from '@nestjs/common';
 import { Args, Context, ID, Mutation, Query, Resolver } from '@nestjs/graphql';
 import { AuthGuard } from '/auth/guards/auth.guard';
 import { Question } from '/entities/question.entity';
-import type { User } from '/entities/user.entity';
+import { UserRole, type User } from '/entities/user.entity';
 
 import { QuestionsService } from '/exam/questions/questions.service';
 
@@ -20,15 +20,34 @@ export class QuestionsResolver {
     private readonly questionsService: QuestionsService,
   ) {}
 
-  // ─── MCQ Mutations ─────────────────────────
+  // DEV USER (temporary until session implemented)
+private devUser = {
+  id: 'a9160128-5427-4d72-8485-52febbbef6c7',
+  role: UserRole.ADMIN,
+};
+
+  //  helpers 
+
+  // private getUser(
+  //   context: { req: { user: User } },
+  // ) {
+  //   return context.req.user;
+  // }
+  private getUser(
+  context: { req?: { user?: User } },
+) {
+  return context?.req?.user ?? this.devUser;
+}
+
+  //  CREATE 
 
   @Mutation(() => Question)
-  @UseGuards(AuthGuard)
+  // @UseGuards(AuthGuard)
   async createMcqQuestion(
     @Args('input') input: CreateMcqQuestionInput,
-    @Context() context: { req: { user: User } },
-  ): Promise<Question> {
-    const user = context.req.user;
+    @Context() ctx: { req: { user: User } },
+  ) {
+    const user = this.getUser(ctx);
 
     return this.questionsService.createMcqQuestion(
       input,
@@ -38,44 +57,12 @@ export class QuestionsResolver {
   }
 
   @Mutation(() => Question)
-  @UseGuards(AuthGuard)
-  async updateMcqQuestion(
-    @Args('input') input: UpdateMcqQuestionInput,
-    @Context() context: { req: { user: User } },
-  ): Promise<Question> {
-    const user = context.req.user;
-
-    return this.questionsService.updateMcqQuestion(
-      input,
-      user.id,
-      user.role,
-    );
-  }
-
-  @Mutation(() => String)
-  @UseGuards(AuthGuard)
-  async deleteMcqQuestion(
-    @Args('id', { type: () => ID }, new ParseUUIDPipe()) id: string,
-    @Context() context: { req: { user: User } },
-  ): Promise<string> {
-    const user = context.req.user;
-
-    return this.questionsService.deleteMcqQuestion(
-      id,
-      user.id,
-      user.role,
-    );
-  }
-
-  // ─── MSQ Mutations ─────────────────────────
-
-  @Mutation(() => Question)
-  @UseGuards(AuthGuard)
+  // @UseGuards(AuthGuard)
   async createMsqQuestion(
     @Args('input') input: CreateMsqQuestionInput,
-    @Context() context: { req: { user: User } },
-  ): Promise<Question> {
-    const user = context.req.user;
+    @Context() ctx: { req: { user: User } },
+  ) {
+    const user = this.getUser(ctx);
 
     return this.questionsService.createMsqQuestion(
       input,
@@ -84,13 +71,30 @@ export class QuestionsResolver {
     );
   }
 
+  //  UPDATE 
+
   @Mutation(() => Question)
-  @UseGuards(AuthGuard)
+  // @UseGuards(AuthGuard)
+  async updateMcqQuestion(
+    @Args('input') input: UpdateMcqQuestionInput,
+    @Context() ctx: { req: { user: User } },
+  ) {
+    const user = this.getUser(ctx);
+
+    return this.questionsService.updateMcqQuestion(
+      input,
+      user.id,
+      user.role,
+    );
+  }
+
+  @Mutation(() => Question)
+  // @UseGuards(AuthGuard)
   async updateMsqQuestion(
     @Args('input') input: UpdateMsqQuestionInput,
-    @Context() context: { req: { user: User } },
-  ): Promise<Question> {
-    const user = context.req.user;
+    @Context() ctx: { req: { user: User } },
+  ) {
+    const user = this.getUser(ctx);
 
     return this.questionsService.updateMsqQuestion(
       input,
@@ -99,74 +103,68 @@ export class QuestionsResolver {
     );
   }
 
-  @Mutation(() => String)
-  @UseGuards(AuthGuard)
-  async deleteMsqQuestion(
-    @Args('id', { type: () => ID }, new ParseUUIDPipe()) id: string,
-    @Context() context: { req: { user: User } },
-  ): Promise<string> {
-    const user = context.req.user;
+  //  DELETE 
 
-    return this.questionsService.deleteMsqQuestion(
+  @Mutation(() => String)
+  // @UseGuards(AuthGuard)
+  async deleteQuestion(
+    @Args('id', { type: () => ID }, ParseUUIDPipe)
+    id: string,
+
+    @Context() ctx: { req: { user: User } },
+  ) {
+    const user = this.getUser(ctx);
+
+    return this.questionsService.deleteQuestion(
       id,
       user.id,
       user.role,
     );
   }
 
-  // ─── MCQ Queries ─────────────────────────
+  //  READ ONE 
 
   @Query(() => Question)
-  async mcqQuestionForExaminer(
-    @Args('id', { type: () => ID }, new ParseUUIDPipe()) id: string,
-  ): Promise<Question> {
-    return this.questionsService.findMcqQuestionWithAnswer(id);
-  }
+  async question(
+    @Args('id', { type: () => ID }, ParseUUIDPipe)
+    id: string,
 
-  @Query(() => Question)
-  async mcqQuestionForAttempt(
-    @Args('id', { type: () => ID }, new ParseUUIDPipe()) id: string,
-  ): Promise<Question> {
-    return this.questionsService.findMcqQuestionWithoutAnswer(id);
-  }
-
-  // ─── MSQ Queries ─────────────────────────
-
-  @Query(() => Question)
-  async msqQuestionForExaminer(
-    @Args('id', { type: () => ID }, new ParseUUIDPipe()) id: string,
-  ): Promise<Question> {
-    return this.questionsService.findMsqQuestionWithAnswers(id);
-  }
-
-  @Query(() => Question)
-  async msqQuestionForAttempt(
-    @Args('id', { type: () => ID }, new ParseUUIDPipe()) id: string,
-  ): Promise<Question> {
-    return this.questionsService.findMsqQuestionWithoutAnswers(id);
-  }
-
-  // ─── Shared Queries ─────────────────────────
-
-  @Query(() => [Question])
-  @UseGuards(AuthGuard)
-  async examQuestionsForExaminer(
-    @Args('examId', { type: () => ID }, new ParseUUIDPipe()) examId: string,
-    @Context() context: { req: { user: User } },
-  ): Promise<Question[]> {
-    const user = context.req.user;
-
-    return this.questionsService.findAllByExamIdWithAnswers(
-      examId,
-      user.id,
-      user.role,
+    @Args('withAnswer', {
+      type: () => Boolean,
+      nullable: true,
+    })
+    withAnswer?: boolean,
+  ) {
+    return this.questionsService.findOne(
+      id,
+      withAnswer ?? false,
     );
   }
 
+  //  READ MANY 
+
   @Query(() => [Question])
-  async examQuestionsForAttempt(
-    @Args('examId', { type: () => ID }, new ParseUUIDPipe()) examId: string,
-  ): Promise<Question[]> {
-    return this.questionsService.findAllByExamIdWithoutAnswers(examId);
+  // @UseGuards(AuthGuard)
+  async examQuestions(
+    @Args('examId', { type: () => ID }, ParseUUIDPipe)
+    examId: string,
+
+    @Context() ctx: { req: { user: User } },
+
+    @Args('withAnswer', {
+      type: () => Boolean,
+      nullable: true,
+    })
+    withAnswer?: boolean,
+    
+  ) {
+    const user = this.getUser(ctx);
+
+    return this.questionsService.findManyByExam(
+      examId,
+      user.id,
+      user.role,
+      withAnswer,
+    );
   }
 }
