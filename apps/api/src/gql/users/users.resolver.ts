@@ -63,7 +63,7 @@ export class UsersResolver {
   }
 
   @Mutation(() => User, { nullable: true })
-  // @UseGuards(AuthGuard)
+  @UseGuards(AuthGuard)
   async updateUser(
     @Args('updateUserData', { type: () => UpdateUserInput })
     updateUserData: UpdateUserInput,

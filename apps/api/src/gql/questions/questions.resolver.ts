@@ -21,28 +21,28 @@ export class QuestionsResolver {
   ) {}
 
   // DEV USER (temporary until session implemented)
-private devUser = {
-  id: 'a9160128-5427-4d72-8485-52febbbef6c7',
-  role: UserRole.ADMIN,
-};
+// private devUser = {
+//   id: 'a9160128-5427-4d72-8485-52febbbef6c7',
+//   role: UserRole.ADMIN,
+// };
 
   //  helpers 
 
-  // private getUser(
-  //   context: { req: { user: User } },
-  // ) {
-  //   return context.req.user;
-  // }
   private getUser(
-  context: { req?: { user?: User } },
-) {
-  return context?.req?.user ?? this.devUser;
-}
+    context: { req: { user: User } },
+  ) {
+    return context.req.user;
+  }
+//   private getUser(
+//   context: { req?: { user?: User } },
+// ) {
+//   return context?.req?.user ?? this.devUser;
+// }
 
   //  CREATE 
 
   @Mutation(() => Question)
-  // @UseGuards(AuthGuard)
+  @UseGuards(AuthGuard)
   async createMcqQuestion(
     @Args('input') input: CreateMcqQuestionInput,
     @Context() ctx: { req: { user: User } },
@@ -57,7 +57,7 @@ private devUser = {
   }
 
   @Mutation(() => Question)
-  // @UseGuards(AuthGuard)
+  @UseGuards(AuthGuard)
   async createMsqQuestion(
     @Args('input') input: CreateMsqQuestionInput,
     @Context() ctx: { req: { user: User } },
@@ -74,7 +74,7 @@ private devUser = {
   //  UPDATE 
 
   @Mutation(() => Question)
-  // @UseGuards(AuthGuard)
+  @UseGuards(AuthGuard)
   async updateMcqQuestion(
     @Args('input') input: UpdateMcqQuestionInput,
     @Context() ctx: { req: { user: User } },
@@ -89,7 +89,7 @@ private devUser = {
   }
 
   @Mutation(() => Question)
-  // @UseGuards(AuthGuard)
+  @UseGuards(AuthGuard)
   async updateMsqQuestion(
     @Args('input') input: UpdateMsqQuestionInput,
     @Context() ctx: { req: { user: User } },
@@ -106,7 +106,7 @@ private devUser = {
   //  DELETE 
 
   @Mutation(() => String)
-  // @UseGuards(AuthGuard)
+  @UseGuards(AuthGuard)
   async deleteQuestion(
     @Args('id', { type: () => ID }, ParseUUIDPipe)
     id: string,
@@ -144,7 +144,7 @@ private devUser = {
   //  READ MANY 
 
   @Query(() => [Question])
-  // @UseGuards(AuthGuard)
+  @UseGuards(AuthGuard)
   async examQuestions(
     @Args('examId', { type: () => ID }, ParseUUIDPipe)
     examId: string,
