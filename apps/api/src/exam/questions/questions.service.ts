@@ -2,280 +2,201 @@ import {
   BadRequestException,
   ForbiddenException,
   Injectable,
-  InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, EntityManager, QueryFailedError, Repository } from 'typeorm';
-import { McqAnswer } from '/entities/mcq-answer.entity';
-import { McqOption } from '/entities/mcq-option.entity';
-import { MsqAnswer } from '/entities/msq-answer.entity';
-import { MsqOption } from '/entities/msq-option.entity';
-import { Question, QuestionType } from '/entities/question.entity';
+import type { Repository } from 'typeorm';
+import { Question, type QuestionType } from '/entities/question.entity';
 import { UserRole } from '/entities/user.entity';
-import { ExamsService } from '/exam/exams/exams.service';
-import type { CreateMcqQuestionInput } from '/gql/questions/inputs/create-mcq-question.input';
-import type { CreateMsqQuestionInput } from '/gql/questions/inputs/create-msq-question.input';
-import type { UpdateMcqQuestionInput } from '/gql/questions/inputs/update-mcq-question.input';
-import type { UpdateMsqQuestionInput } from '/gql/questions/inputs/update-msq-question.input';
+import type { ExamsService } from '/exam/exams/exams.service';
 
 @Injectable()
 export class QuestionsService {
   constructor(
     @InjectRepository(Question)
     private readonly questionsRepo: Repository<Question>,
-
-    private readonly dataSource: DataSource,
-
+ 
     private readonly examsService: ExamsService,
   ) {}
-
-  //helpers
-
-  private async getQuestion(id: string, manager?: EntityManager) {
-  const repo = manager
-    ? manager.getRepository(Question)
-    : this.questionsRepo;
-
-  return repo.findOne({
-    where: { id },
-    relations: {
-      exam: true,
-      mcqOptions: true,
-      mcqAnswer: true,
-      msqOptions: true,
-      msqAnswers: true,
-    },
-  });
-}
-
-  private async checkWritable(examId: string, userId: string, role: UserRole) {
-    const exam = await this.examsService.getExamById({
-      id: examId,
-      userId,
-      role,
-    });
-
-    if (new Date() >= new Date(exam.startTime)) {
-      throw new BadRequestException('Cannot modify questions after exam start');
-    }
-
-    return exam;
-  }
-
-  private checkExaminer(role: UserRole) {
-    if (![UserRole.ADMIN, UserRole.EXAMINER].includes(role)) {
-      throw new ForbiddenException();
-    }
-  }
-
-  //CREATE
-
-  async createMcqQuestion(
-    input: CreateMcqQuestionInput,
-    userId: string,
-    role: UserRole,
-  ) {
-    this.checkExaminer(role);
-
-    const {
-      text,
-      durationMinutes,
-      marks,
-      examId,
-      options,
-      correctOptionIndex,
-    } = input;
-
-    await this.checkWritable(examId, userId, role);
-
-    return this.dataSource.transaction(async (m) => {
-      const question = await m.save(
-        Question,
-        m.create(Question, {
-          text,
-          type: QuestionType.MCQ,
-          durationMinutes,
-          marks,
-          exam: { id: examId },
-        }),
-      );
-
-      const savedOptions = await m.save(
-        McqOption,
-        options.map((o) =>
-          m.create(McqOption, {
-            text: o.text,
-            question: { id: question.id },
-          }),
-        ),
-      );
-
-      await m.save(
-        McqAnswer,
-        m.create(McqAnswer, {
-          question: { id: question.id },
-          option: { id: savedOptions[correctOptionIndex].id },
-        }),
-      );
-
-      return this.getQuestion(question.id, m);
-    });
-  }
-
-  async createMsqQuestion(
-    input: CreateMsqQuestionInput,
-    userId: string,
-    role: UserRole,
-  ) {
-    this.checkExaminer(role);
-
-    const {
-      text,
-      durationMinutes,
-      marks,
-      examId,
-      options,
-      correctOptionIndices,
-    } = input;
-
-    await this.checkWritable(examId, userId, role);
-
-    return this.dataSource.transaction(async (m) => {
-      const question = await m.save(
-        Question,
-        m.create(Question, {
-          text,
-          type: QuestionType.MSQ,
-          durationMinutes,
-          marks,
-          exam: { id: examId },
-        }),
-      );
-
-      const savedOptions = await m.save(
-        MsqOption,
-        options.map((o) =>
-          m.create(MsqOption, {
-            text: o.text,
-            hasPartialMarking: o.hasPartialMarking,
-            question: { id: question.id },
-          }),
-        ),
-      );
-
-      await m.save(
-        MsqAnswer,
-        correctOptionIndices.map((i) =>
-          m.create(MsqAnswer, {
-            question: { id: question.id },
-            option: { id: savedOptions[i].id },
-          }),
-        ),
-      );
-
-      return this.getQuestion(question.id, m);
-    });
-  }
-
-  //READ
-
-  async findOne(id: string, withAnswer = false) {
-    return this.questionsRepo.findOne({
-      where: { id },
-      relations: {
-        mcqOptions: true,
-        msqOptions: true,
-        ...(withAnswer && {
-          mcqAnswer: true,
-          msqAnswers: true,
-        }),
-      },
-    });
-  }
-
-  async findManyByExam(
-    examId: string,
-    userId: string,
-    role: UserRole,
-    withAnswer = false,
-  ) {
-    await this.examsService.getExamById({
-      id: examId,
-      userId,
-      role,
-    });
-
+ 
+  async getQuestions({
+    examId,
+    userId,
+    role,
+  }: {
+    examId: string;
+    userId: string;
+    role: UserRole;
+  }): Promise<Question[]> {
+    await this.examsService.getExamById({ id: examId, userId, role });
+ 
     return this.questionsRepo.find({
-      where: {
-        exam: { id: examId },
-      },
-      relations: {
-        mcqOptions: true,
-        msqOptions: true,
-        ...(withAnswer && {
-          mcqAnswer: true,
-          msqAnswers: true,
-        }),
-      },
+      where: { exam: { id: examId } },
       order: { createdAt: 'ASC' },
     });
   }
-
-  //UPDATE
-
-  async updateMcqQuestion(
-    input: UpdateMcqQuestionInput,
-    userId: string,
-    role: UserRole,
-  ) {
-    const question = await this.getQuestion(input.id);
-
-    if (!question) throw new NotFoundException();
-
-    await this.checkWritable(question.exam.id, userId, role);
-
-    if (input.text !== undefined) question.text = input.text;
-
-    if (input.marks !== undefined) question.marks = input.marks;
-
-    if (input.durationMinutes !== undefined)
-      question.durationMinutes = input.durationMinutes;
-
+ 
+  async getQuestionById({
+    id,
+    userId,
+    role,
+  }: {
+    id: string;
+    userId: string;
+    role: UserRole;
+  }): Promise<Question> {
+    const question = await this.questionsRepo.findOne({
+      where: { id },
+      relations: ['exam', 'exam.createdBy'],
+    });
+ 
+    if (!question) {
+      throw new NotFoundException('Question not found');
+    }
+ 
+    if (role !== UserRole.ADMIN && question.exam.createdBy.id !== userId) {
+      throw new ForbiddenException('You are not allowed to access this question');
+    }
+ 
+    return question;
+  }
+ 
+  async createQuestion({
+    text,
+    type,
+    marks,
+    durationMinutes,
+    examId,
+    userId,
+    role,
+  }: {
+    text: string;
+    type: QuestionType;
+    marks: number;
+    durationMinutes?: number | null;
+    examId: string;
+    userId: string;
+    role: UserRole;
+  }): Promise<Question> {
+    if (![UserRole.ADMIN, UserRole.EXAMINER].includes(role)) {
+      throw new ForbiddenException('You are not allowed to create questions');
+    }
+ 
+    const exam = await this.examsService.getExamById({ id: examId, userId, role });
+ 
+    if (new Date() >= new Date(exam.startTime)) {
+      throw new BadRequestException('Cannot add questions after exam has started');
+    }
+ 
+    const question = this.questionsRepo.create({
+      text,
+      type,
+      marks,
+      durationMinutes,
+      exam: { id: examId },
+    });
+ 
     return this.questionsRepo.save(question);
   }
-
-  async updateMsqQuestion(
-    input: UpdateMsqQuestionInput,
-    userId: string,
-    role: UserRole,
-  ) {
-    const question = await this.getQuestion(input.id);
-
-    if (!question) throw new NotFoundException();
-
-    await this.checkWritable(question.exam.id, userId, role);
-
-    if (input.text !== undefined) question.text = input.text;
-
-    if (input.marks !== undefined) question.marks = input.marks;
-
-    if (input.durationMinutes !== undefined)
-      question.durationMinutes = input.durationMinutes;
-
+ 
+  async updateQuestion({
+    id,
+    text,
+    marks,
+    durationMinutes,
+    userId,
+    role,
+  }: {
+    id: string;
+    text?: string;
+    marks?: number;
+    durationMinutes?: number | null;
+    userId: string;
+    role: UserRole;
+  }): Promise<Question> {
+    const question = await this.questionsRepo.findOne({
+      where: { id },
+      relations: ['exam', 'exam.createdBy'],
+    });
+ 
+    if (!question) {
+      throw new NotFoundException('Question not found');
+    }
+ 
+    if (role !== UserRole.ADMIN && question.exam.createdBy.id !== userId) {
+      throw new ForbiddenException('You are not allowed to update this question');
+    }
+ 
+    if (new Date() >= new Date(question.exam.startTime)) {
+      throw new BadRequestException('Cannot modify questions after exam has started');
+    }
+ 
+    Object.assign(question, { text, marks, durationMinutes });
+ 
     return this.questionsRepo.save(question);
   }
-
-  //DELETE
-  async deleteQuestion(id: string, userId: string, role: UserRole) {
-    const question = await this.getQuestion(id);
-
-    if (!question) throw new NotFoundException();
-
-    await this.checkWritable(question.examId, userId, role);
-
+ 
+  async deleteQuestion({
+    id,
+    userId,
+    role,
+  }: {
+    id: string;
+    userId: string;
+    role: UserRole;
+  }): Promise<boolean> {
+    const question = await this.questionsRepo.findOne({
+      where: { id },
+      relations: ['exam', 'exam.createdBy'],
+    });
+ 
+    if (!question) {
+      throw new NotFoundException('Question not found');
+    }
+ 
+    if (role !== UserRole.ADMIN && question.exam.createdBy.id !== userId) {
+      throw new ForbiddenException('You are not allowed to delete this question');
+    }
+ 
+    if (new Date() >= new Date(question.exam.startTime)) {
+      throw new BadRequestException('Cannot delete questions after exam has started');
+    }
+ 
     await this.questionsRepo.delete(id);
-
-    return id;
+ 
+    return true;
+  }
+ 
+  async deleteManyQuestions({
+    ids,
+    userId,
+    role,
+  }: {
+    ids: string[];
+    userId: string;
+    role: UserRole;
+  }): Promise<boolean> {
+    for (const id of ids) {
+      const question = await this.questionsRepo.findOne({
+        where: { id },
+        relations: ['exam', 'exam.createdBy'],
+      });
+ 
+      if (!question) {
+        throw new NotFoundException(`Question with id ${id} not found`);
+      }
+ 
+      if (role !== UserRole.ADMIN && question.exam.createdBy.id !== userId) {
+        throw new ForbiddenException(`You are not allowed to delete question ${id}`);
+      }
+ 
+      if (new Date() >= new Date(question.exam.startTime)) {
+        throw new BadRequestException('Cannot delete questions after exam has started');
+      }
+ 
+      await this.questionsRepo.delete(id);
+    }
+ 
+    return true;
   }
 }
