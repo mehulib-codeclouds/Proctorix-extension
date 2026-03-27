@@ -9,6 +9,7 @@ import {
 } from '@nestjs/graphql';
 import { CurrentUser } from '/auth/decorators/current-user.decorator';
 import { AuthGuard } from '/auth/guards/auth.guard';
+import { SessionsService } from '/auth/sessions/sessions.service';
 import { UsersService } from '/auth/users/users.service';
 import { Attempt } from '/entities/attempt.entity';
 import { Exam } from '/entities/exam.entity';
@@ -16,18 +17,18 @@ import { Session } from '/entities/session.entity';
 import { User } from '/entities/user.entity';
 import { CreateUserInput } from './inputs/create-user.input';
 import { UpdateUserInput } from './inputs/update-user.input';
-
 @Resolver(() => User)
 export class UsersResolver {
   constructor(
     @Inject(UsersService) private readonly usersService: UsersService,
+    @Inject(SessionsService) private readonly sessionsService: SessionsService,
   ) {}
 
   @ResolveField(() => [Session])
   async sessions(@Parent() user: User) {
     const { id } = user;
-    // TODO:
-    // return this.sessionsService.findMany({ userId: id });
+    //Done
+    return this.sessionsService.findMany({ userId: id });
   }
 
   @ResolveField(() => [Exam])

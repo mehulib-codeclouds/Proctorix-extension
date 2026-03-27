@@ -31,6 +31,8 @@
     "class-transformer": "^0.5.1",
     "class-validator": "^0.15.1",
     "fastify": "^5.8.2",
+    "google-auth-library": "^10.6.1",
+    "googleapis": "^171.4.0",
     "graphql": "^16.13.1",
     "nestjs-resend": "^1.1.0",
     "pg": "^8.20.0",
