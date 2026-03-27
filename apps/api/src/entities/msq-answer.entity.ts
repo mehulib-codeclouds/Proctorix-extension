@@ -42,6 +42,7 @@ export class MsqAnswer {
   option: Relation<MsqOption>;
 
   @RelationId((msqOption: MsqAnswer) => msqOption.option)
+  @Field()
   optionId: string;
 
   @CreateDateColumn({

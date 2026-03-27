@@ -35,6 +35,10 @@ export class McqOption {
   @RelationId((mcqOption: McqOption) => mcqOption.question)
   questionId: string;
 
+  @Column({ name: 'text', type: 'text', nullable: false })
+  @Field()
+  text: string;
+
   @OneToOne(
     () => McqAnswer,
     (mcqAnswer) => mcqAnswer.option,
@@ -43,7 +47,7 @@ export class McqOption {
 
   @OneToMany(
     () => AttemptMcqAnswer,
-    (attemptMcqAnswer) => attemptMcqAnswer.attempt,
+    (attemptMcqAnswer) => attemptMcqAnswer.option,
   )
   attemptMcqAnswers: Relation<AttemptMcqAnswer>[];
 
