@@ -2,7 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { verify } from 'argon2';
 import type { OAuth2Client } from 'google-auth-library';
-import {google} from 'googleapis'
+import { google } from 'googleapis';
 import { Equal, In, type Repository } from 'typeorm';
 import { Session } from '/entities/session.entity';
 import type { User } from '/entities/user.entity';
@@ -80,7 +80,7 @@ export class SessionsService {
     }
 
     if (!user.isVerified)
-      await this.usersService.update({ id: user.id, isVerified: true}, user );
+      await this.usersService.update({ id: user.id, isVerified: true }, user);
 
     const session = this.sessionsRepository.create({ user });
     return this.sessionsRepository.save(session);
@@ -144,9 +144,7 @@ export class SessionsService {
     );
 
     if (deletableSessions.length === 0) return [];
-
     const deletableIds = deletableSessions.map((session) => session.id);
-
     await this.sessionsRepository.delete(deletableIds);
 
     return deletableSessions;

@@ -60,24 +60,14 @@ export class UsersService {
     const { id, name, email, password, role, isVerified } = input;
 
     const userToUpdate = await this.findOne({ id });
-
     if (!userToUpdate) return null;
-
-    // CHECK IF THE USER TRYING TO EDIT IS SELF, AND HAS SUFFICIENT PERMISSIONS
-    if (id !== user.id && user.role !== UserRole.ADMIN) {
-      return null;
-    }
+    if (id !== user.id && user.role !== UserRole.ADMIN) return null;
 
     if (name !== undefined) userToUpdate.name = name;
-
     if (email !== undefined) userToUpdate.email = email;
-
-    if (password !== undefined) {
+    if (password !== undefined)
       userToUpdate.password = password === null ? null : await hash(password);
-    }
-
     if (role !== undefined) userToUpdate.role = role;
-
     if (isVerified !== undefined) userToUpdate.isVerified = isVerified;
 
     return await this.usersRepository.save(userToUpdate);

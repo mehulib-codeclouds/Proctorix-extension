@@ -23,42 +23,31 @@ export class AuthGuard implements CanActivate {
     const { req } = gqlExecutionContext.getContext<{ req: FastifyRequest }>();
 
     const authHeader = req.headers.authorization;
-    if (!authHeader) {
-      return false;
-    }
+    if (!authHeader) return false;
 
     const parts = authHeader.split(' ');
-    if (parts.length !== 2) {
-      return false;
-    }
+    if (parts.length !== 2) return false;
 
     const [type, token] = parts;
 
-    if (type !== 'Bearer' || !token) {
-      return false;
-    }
+    if (type !== 'Bearer' || !token) return false;
 
-  
     const session = await this.sessionsService.findOne(token);
-    if (!session) {
-         return false;
+    if (!session) return false;
+
+    if (
+      !session.lastUsedAt ||
+      Date.now() - session.lastUsedAt.getTime() > 5 * 60 * 60 * 60
+    ) {
+      await this.sessionsService.update({
+        id: session.id,
+        lastUsedAt: new Date(),
+      });
     }
 
-    // TODO: UPDATE THE SESSIONS TABLE (IF > 5 MIN)
-    if (!session.lastUsedAt || Date.now() - session.lastUsedAt.getTime() > 5 * 60 * 60) {
-        await this.sessionsService.update({
-            id: session.id,
-            lastUsedAt: new Date(),
-        });
-    }
-
-    // TODO: FIND THE ACTUAL USER AGAINST THE TOKEN
     const user = await this.usersService.findOne({ id: session.userId });
-    if (!user) {
-        return false;
-    }
+    if (!user) return false;
 
-    //TODO: ASSIGN THE SESSION AND USER OBJECT (IF FOUND) TO THE REQUEST AND GO NEXT
     req.session = session;
     req.user = user;
 

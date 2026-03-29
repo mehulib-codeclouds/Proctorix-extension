@@ -4,9 +4,9 @@ import { ExamsModule } from '/exam/exam.module';
 import { MCQAnswersResolver } from './answers/mcq-answers.resolver';
 import { MSQAnswersResolver } from './answers/msq-answers.resolver';
 import { ExamsResolver } from './exams/exam.resolver';
+import { QuestionsResolver } from './questions/questions.resolver';
 import { SessionsResolver } from './sessions/sessions.resolver';
 import { UsersResolver } from './users/users.resolver';
-import { QuestionsResolver } from './questions/questions.resolver';
 
 @Module({
   imports: [AuthModule, ExamsModule],
@@ -18,10 +18,6 @@ import { QuestionsResolver } from './questions/questions.resolver';
     MSQAnswersResolver,
     QuestionsResolver,
   ],
-  exports: [
-    UsersResolver,
-    ExamsResolver,
-    QuestionsResolver,
-  ]
+  exports: [UsersResolver, ExamsResolver, QuestionsResolver],
 })
 export class GqlModule {}

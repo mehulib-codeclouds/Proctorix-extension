@@ -42,11 +42,11 @@ export class Question {
   text: string;
 
   @Column({
-  name: 'type',
-  type: 'enum',
-  enum: QuestionType,
-  enumName: 'questions_type_enum',
-})
+    name: 'type',
+    type: 'enum',
+    enum: QuestionType,
+    enumName: 'questions_type_enum',
+  })
   @Field(() => QuestionType)
   type: QuestionType;
 

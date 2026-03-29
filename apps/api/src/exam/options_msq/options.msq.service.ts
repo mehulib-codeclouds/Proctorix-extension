@@ -19,8 +19,6 @@ export class OptionsService {
     private readonly questionsService: QuestionsService,
   ) {}
 
-  // MSQ OPTIONS
-
   async getMsqOptions(questionId: string): Promise<MsqOption[]> {
     return this.msqOptionsRepo.find({
       where: { question: { id: questionId } },

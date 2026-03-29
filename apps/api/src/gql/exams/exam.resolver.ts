@@ -5,11 +5,9 @@ import type { User } from '/entities/user.entity';
 import { Exam } from '../../entities/exam.entity';
 import { ExamsService } from '../../exam/exams/exams.service';
 
-
 import { CreateExamInput } from './input/CreateExamInput';
 import { DeleteManyExamsInput } from './input/DeleteManyExamInput';
 import { UpdateExamInput } from './input/UpdateExamInput';
-
 
 @Resolver(() => Exam)
 export class ExamsResolver {
@@ -17,40 +15,24 @@ export class ExamsResolver {
     @Inject(ExamsService) private readonly examsService: ExamsService,
   ) {}
 
-
-
-
   @Query(() => [Exam])
-   @UseGuards(AuthGuard)
-async exams(
- @Context() context: { req: { user: User } },
-): Promise<Exam[]> {
+  @UseGuards(AuthGuard)
+  async exams(@Context() context: { req: { user: User } }): Promise<Exam[]> {
+    const user = context.req.user;
 
-
- const user = context.req.user;
-
-
-    return this.examsService.getExams({
+    return this.examsService.findMany({
       userId: user.id,
       role: user.role,
     });
   }
 
-
-
-
-
-
   @Query(() => Exam)
-   @UseGuards(AuthGuard)
+  @UseGuards(AuthGuard)
   async getExamById(
     @Args('id', { type: () => ID }) id: string,
     @Context() context: { req: { user: User } },
   ): Promise<Exam> {
-
-
- const user = context.req.user;
-
+    const user = context.req.user;
 
     return this.examsService.getExamById({
       id,
@@ -59,27 +41,13 @@ async exams(
     });
   }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
   @Mutation(() => Exam)
-   @UseGuards(AuthGuard)
+  @UseGuards(AuthGuard)
   async createExam(
     @Args('input', { type: () => CreateExamInput }) input: CreateExamInput,
     @Context() context: { req: { user: User } },
   ): Promise<Exam> {
-   const user = context.req.user;
-
+    const user = context.req.user;
 
     return this.examsService.createExam({
       title: input.title,
@@ -94,16 +62,14 @@ async exams(
     });
   }
 
-
   @Mutation(() => Exam)
-   @UseGuards(AuthGuard)
+  @UseGuards(AuthGuard)
   async updateExam(
     @Args('id', { type: () => ID }) id: string,
     @Args('input', { type: () => UpdateExamInput }) input: UpdateExamInput,
     @Context() context: { req: { user: User } },
   ): Promise<Exam> {
-   const user = context.req.user;
-
+    const user = context.req.user;
 
     return this.examsService.updateExam({
       id,
@@ -119,15 +85,13 @@ async exams(
     });
   }
 
-
   @Mutation(() => Boolean)
-   @UseGuards(AuthGuard)
+  @UseGuards(AuthGuard)
   async deleteExam(
     @Args('id', { type: () => ID }) id: string,
     @Context() context: { req: { user: User } },
   ): Promise<boolean> {
     const user = context.req.user;
-
 
     return this.examsService.deleteExam({
       id,
@@ -136,18 +100,15 @@ async exams(
     });
   }
 
-
   @Mutation(() => Boolean)
-   @UseGuards(AuthGuard)
+  @UseGuards(AuthGuard)
   async deleteManyExams(
     @Args('input', { type: () => DeleteManyExamsInput })
     input: DeleteManyExamsInput,
 
-
     @Context() context: { req: { user: User } },
   ): Promise<boolean> {
     const user = context.req.user;
-
 
     return this.examsService.deleteManyExams({
       ids: input.ids,
@@ -156,6 +117,3 @@ async exams(
     });
   }
 }
-
-
-

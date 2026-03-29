@@ -18,57 +18,57 @@ export class OptionsResolver {
     return context.req.user;
   }
 
-@Query(() => [MsqOption])
+  @Query(() => [MsqOption])
   @UseGuards(AuthGuard)
-async msqOptions(
+  async msqOptions(
     @Args('questionId', { type: () => ID }, ParseUUIDPipe) questionId: string,
-  )
-{
-  return this.optionsService.getMsqOptions(questionId);
-}
+  ) {
+    return this.optionsService.getMsqOptions(questionId);
+  }
 
-@Mutation(() => MsqOption)
+  @Mutation(() => MsqOption)
   @UseGuards(AuthGuard)
-async createMsqOption(
+  async createMsqOption(
     @Args('input') input: CreateMsqOptionInput,
     @Context() context: { req: { user: User } },
-  )
-{
-  const user = this.getUser(context);
-  return this.optionsService.createMsqOption({
+  ) {
+    const user = this.getUser(context);
+    return this.optionsService.createMsqOption({
       text: input.text,
       hasPartialMarking: input.hasPartialMarking,
       questionId: input.questionId,
       userId: user.id,
       role: user.role,
     });
-}
+  }
 
-@Mutation(() => MsqOption)
+  @Mutation(() => MsqOption)
   @UseGuards(AuthGuard)
-async updateMsqOption(
+  async updateMsqOption(
     @Args('input') input: UpdateMsqOptionInput,
     @Context() context: { req: { user: User } },
-  )
-{
-  const user = this.getUser(context);
-  return this.optionsService.updateMsqOption({
+  ) {
+    const user = this.getUser(context);
+    return this.optionsService.updateMsqOption({
       id: input.id,
       text: input.text,
       hasPartialMarking: input.hasPartialMarking,
       userId: user.id,
       role: user.role,
     });
-}
+  }
 
-@Mutation(() => Boolean)
+  @Mutation(() => Boolean)
   @UseGuards(AuthGuard)
-async deleteMsqOption(
+  async deleteMsqOption(
     @Args('id', { type: () => ID }, ParseUUIDPipe) id: string,
     @Context() context: { req: { user: User } },
-  )
-{
-  const user = this.getUser(context);
-  return this.optionsService.deleteMsqOption({ id, userId: user.id, role: user.role });
-}
+  ) {
+    const user = this.getUser(context);
+    return this.optionsService.deleteMsqOption({
+      id,
+      userId: user.id,
+      role: user.role,
+    });
+  }
 }

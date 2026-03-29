@@ -14,8 +14,8 @@ import { MsqOption } from '/entities/msq-option.entity';
 import type { User } from '/entities/user.entity';
 import { MSQAnswerService } from '/exam/answers/msq-answer.service';
 import { Question } from '../../entities/question.entity';
-import { CreateMSQAnswerInput } from './inputs/create-msq-answer';
-import { UpdateMSQAnswerInput } from './inputs/update-msq-answer';
+import type { CreateMSQAnswerInput } from './inputs/create-msq-answer';
+import type { UpdateMSQAnswerInput } from './inputs/update-msq-answer';
 
 @Resolver(() => MsqAnswer)
 export class MSQAnswersResolver {

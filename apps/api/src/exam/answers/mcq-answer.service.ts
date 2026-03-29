@@ -20,7 +20,7 @@ export class MCQAnswerService {
     @InjectRepository(Question)
     private readonly questionRepository: Repository<Question>,
   ) {}
-  // MCQ Answer Methods
+
   async CreateMCQAnswer({
     questionId,
     optionId,
@@ -90,7 +90,7 @@ export class MCQAnswerService {
     role: string;
   }): Promise<McqAnswer> {
     const mcqAnswer = await this.mcqAnswerRepository.findOne({
-      where: { question: { id: questionId } }, 
+      where: { question: { id: questionId } },
     });
 
     if (!mcqAnswer) {
@@ -142,8 +142,8 @@ export class MCQAnswerService {
     }
     const mcqAnswer = await this.mcqAnswerRepository.findOne({
       where: {
-        question: { id: questionId }, 
-      }
+        question: { id: questionId },
+      },
     });
 
     if (!mcqAnswer) {

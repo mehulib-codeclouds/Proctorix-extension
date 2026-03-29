@@ -15,10 +15,10 @@ export class QuestionsService {
   constructor(
     @InjectRepository(Question)
     private readonly questionsRepo: Repository<Question>,
- 
+
     private readonly examsService: ExamsService,
   ) {}
- 
+
   async getQuestions({
     examId,
     userId,
@@ -29,13 +29,13 @@ export class QuestionsService {
     role: UserRole;
   }): Promise<Question[]> {
     await this.examsService.getExamById({ id: examId, userId, role });
- 
+
     return this.questionsRepo.find({
       where: { exam: { id: examId } },
       order: { createdAt: 'ASC' },
     });
   }
- 
+
   async getQuestionById({
     id,
     userId,
@@ -49,18 +49,20 @@ export class QuestionsService {
       where: { id },
       relations: ['exam', 'exam.createdBy'],
     });
- 
+
     if (!question) {
       throw new NotFoundException('Question not found');
     }
- 
+
     if (role !== UserRole.ADMIN && question.exam.createdBy.id !== userId) {
-      throw new ForbiddenException('You are not allowed to access this question');
+      throw new ForbiddenException(
+        'You are not allowed to access this question',
+      );
     }
- 
+
     return question;
   }
- 
+
   async createQuestion({
     text,
     type,
@@ -81,13 +83,19 @@ export class QuestionsService {
     if (![UserRole.ADMIN, UserRole.EXAMINER].includes(role)) {
       throw new ForbiddenException('You are not allowed to create questions');
     }
- 
-    const exam = await this.examsService.getExamById({ id: examId, userId, role });
- 
+
+    const exam = await this.examsService.getExamById({
+      id: examId,
+      userId,
+      role,
+    });
+
     if (new Date() >= new Date(exam.startTime)) {
-      throw new BadRequestException('Cannot add questions after exam has started');
+      throw new BadRequestException(
+        'Cannot add questions after exam has started',
+      );
     }
- 
+
     const question = this.questionsRepo.create({
       text,
       type,
@@ -95,10 +103,10 @@ export class QuestionsService {
       durationMinutes,
       exam: { id: examId },
     });
- 
+
     return this.questionsRepo.save(question);
   }
- 
+
   async updateQuestion({
     id,
     text,
@@ -118,24 +126,28 @@ export class QuestionsService {
       where: { id },
       relations: ['exam', 'exam.createdBy'],
     });
- 
+
     if (!question) {
       throw new NotFoundException('Question not found');
     }
- 
+
     if (role !== UserRole.ADMIN && question.exam.createdBy.id !== userId) {
-      throw new ForbiddenException('You are not allowed to update this question');
+      throw new ForbiddenException(
+        'You are not allowed to update this question',
+      );
     }
- 
+
     if (new Date() >= new Date(question.exam.startTime)) {
-      throw new BadRequestException('Cannot modify questions after exam has started');
+      throw new BadRequestException(
+        'Cannot modify questions after exam has started',
+      );
     }
- 
+
     Object.assign(question, { text, marks, durationMinutes });
- 
+
     return this.questionsRepo.save(question);
   }
- 
+
   async deleteQuestion({
     id,
     userId,
@@ -149,24 +161,28 @@ export class QuestionsService {
       where: { id },
       relations: ['exam', 'exam.createdBy'],
     });
- 
+
     if (!question) {
       throw new NotFoundException('Question not found');
     }
- 
+
     if (role !== UserRole.ADMIN && question.exam.createdBy.id !== userId) {
-      throw new ForbiddenException('You are not allowed to delete this question');
+      throw new ForbiddenException(
+        'You are not allowed to delete this question',
+      );
     }
- 
+
     if (new Date() >= new Date(question.exam.startTime)) {
-      throw new BadRequestException('Cannot delete questions after exam has started');
+      throw new BadRequestException(
+        'Cannot delete questions after exam has started',
+      );
     }
- 
+
     await this.questionsRepo.delete(id);
- 
+
     return true;
   }
- 
+
   async deleteManyQuestions({
     ids,
     userId,
@@ -181,22 +197,26 @@ export class QuestionsService {
         where: { id },
         relations: ['exam', 'exam.createdBy'],
       });
- 
+
       if (!question) {
         throw new NotFoundException(`Question with id ${id} not found`);
       }
- 
+
       if (role !== UserRole.ADMIN && question.exam.createdBy.id !== userId) {
-        throw new ForbiddenException(`You are not allowed to delete question ${id}`);
+        throw new ForbiddenException(
+          `You are not allowed to delete question ${id}`,
+        );
       }
- 
+
       if (new Date() >= new Date(question.exam.startTime)) {
-        throw new BadRequestException('Cannot delete questions after exam has started');
+        throw new BadRequestException(
+          'Cannot delete questions after exam has started',
+        );
       }
- 
+
       await this.questionsRepo.delete(id);
     }
- 
+
     return true;
   }
 }

@@ -1,9 +1,6 @@
 import { Field, InputType, Int } from '@nestjs/graphql';
-import {
-  IsEnum,
-} from 'class-validator';
+import { IsEnum } from 'class-validator';
 import { QuestionType } from '/entities/question.entity';
-
 
 @InputType()
 export class CreateQuestionInput {

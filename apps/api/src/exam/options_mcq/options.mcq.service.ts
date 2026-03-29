@@ -9,7 +9,7 @@ import type { Repository } from 'typeorm';
 import { McqOption } from '../../entities/mcq-option.entity';
 import { MsqOption } from '../../entities/msq-option.entity';
 import { UserRole } from '../../entities/user.entity';
-import { QuestionsService } from '../questions/questions.service';
+import type { QuestionsService } from '../questions/questions.service';
 
 @Injectable()
 export class OptionsService {
@@ -46,10 +46,16 @@ export class OptionsService {
       throw new ForbiddenException('You are not allowed to create options');
     }
 
-    const question = await this.questionsService.getQuestionById({ id: questionId, userId, role });
+    const question = await this.questionsService.getQuestionById({
+      id: questionId,
+      userId,
+      role,
+    });
 
     if (new Date() >= new Date(question.exam.startTime)) {
-      throw new BadRequestException('Cannot add options after exam has started');
+      throw new BadRequestException(
+        'Cannot add options after exam has started',
+      );
     }
 
     const option = this.mcqOptionsRepo.create({
@@ -80,12 +86,17 @@ export class OptionsService {
       throw new NotFoundException('MCQ option not found');
     }
 
-    if (role !== UserRole.ADMIN && option.question.exam.createdBy.id !== userId) {
+    if (
+      role !== UserRole.ADMIN &&
+      option.question.exam.createdBy.id !== userId
+    ) {
       throw new ForbiddenException('You are not allowed to update this option');
     }
 
     if (new Date() >= new Date(option.question.exam.startTime)) {
-      throw new BadRequestException('Cannot modify options after exam has started');
+      throw new BadRequestException(
+        'Cannot modify options after exam has started',
+      );
     }
 
     option.text = text;
@@ -111,12 +122,17 @@ export class OptionsService {
       throw new NotFoundException('MCQ option not found');
     }
 
-    if (role !== UserRole.ADMIN && option.question.exam.createdBy.id !== userId) {
+    if (
+      role !== UserRole.ADMIN &&
+      option.question.exam.createdBy.id !== userId
+    ) {
       throw new ForbiddenException('You are not allowed to delete this option');
     }
 
     if (new Date() >= new Date(option.question.exam.startTime)) {
-      throw new BadRequestException('Cannot delete options after exam has started');
+      throw new BadRequestException(
+        'Cannot delete options after exam has started',
+      );
     }
 
     await this.mcqOptionsRepo.delete(id);

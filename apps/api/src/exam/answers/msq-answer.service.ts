@@ -141,7 +141,7 @@ export class MSQAnswerService {
     const answers = options.map((option) =>
       this.msqAnswerRepository.create({
         question,
-        option, 
+        option,
       }),
     );
     return this.msqAnswerRepository.save(answers);

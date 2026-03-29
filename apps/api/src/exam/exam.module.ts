@@ -11,12 +11,6 @@ import { User } from '/entities/user.entity';
 import { MCQAnswerService } from './answers/mcq-answer.service';
 import { MSQAnswerService } from './answers/msq-answer.service';
 import { ExamsService } from './exams/exams.service';
-import { QuestionsService } from './questions/questions.service';
-import { Question } from '/entities/question.entity';
-import { McqOption } from '/entities/mcq-option.entity';
-import { MsqAnswer } from '/entities/msq-answer.entity';
-import { MsqOption } from '/entities/msq-option.entity';
-import { McqAnswer } from '/entities/mcq-answer.entity';
 
 @Module({
   imports: [
