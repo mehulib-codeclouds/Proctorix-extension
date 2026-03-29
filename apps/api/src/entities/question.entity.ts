@@ -1,4 +1,4 @@
-import { Field, ObjectType } from '@nestjs/graphql';
+import { Field, Int, ObjectType, registerEnumType } from '@nestjs/graphql';
 import {
   Column,
   CreateDateColumn,
@@ -25,6 +25,10 @@ export enum QuestionType {
   MSQ = 'msq',
 }
 
+registerEnumType(QuestionType, {
+  name: 'QuestionType',
+});
+
 @Entity('questions')
 @ObjectType()
 export class Question {
@@ -38,17 +42,20 @@ export class Question {
   text: string;
 
   @Column({
-    name: 'type',
-    type: 'enum',
-    enum: QuestionType,
-    nullable: false,
-  })
+  name: 'type',
+  type: 'enum',
+  enum: QuestionType,
+  enumName: 'questions_type_enum',
+})
+  @Field(() => QuestionType)
   type: QuestionType;
 
   @Column({ name: 'duration_minutes', type: 'integer', nullable: true })
+  @Field(() => Int, { nullable: true })
   durationMinutes: number | null;
 
   @Column({ name: 'marks', type: 'smallint', nullable: false })
+  @Field(() => Int)
   marks: number | null;
 
   @ManyToOne(
@@ -60,41 +67,46 @@ export class Question {
   exam: Relation<Exam>;
 
   @RelationId((question: Question) => question.exam)
+  @Field()
   examId: string;
 
   @OneToMany(
     () => McqOption,
     (mcqOption) => mcqOption.question,
   )
+  @Field(() => [McqOption])
   mcqOptions: Relation<McqOption>[];
 
   @OneToMany(
     () => MsqOption,
     (msqOption) => msqOption.question,
   )
+  @Field(() => [MsqOption])
   msqOptions: Relation<MsqOption>[];
 
   @OneToOne(
     () => McqAnswer,
     (mcqAnswer) => mcqAnswer.question,
   )
+  @Field(() => McqAnswer)
   mcqAnswer: Relation<McqAnswer>;
 
   @OneToMany(
     () => MsqAnswer,
     (msqAnswer) => msqAnswer.question,
   )
-  msqAnswers: Relation<McqAnswer>;
+  @Field(() => [MsqAnswer])
+  msqAnswers: Relation<MsqAnswer>[];
 
   @OneToMany(
     () => AttemptMcqAnswer,
-    (attemptMcqAnswer) => attemptMcqAnswer.attempt,
+    (attemptMcqAnswer) => attemptMcqAnswer.question,
   )
   attemptMcqAnswers: Relation<AttemptMcqAnswer>[];
 
   @OneToMany(
     () => AttemptMsqAnswer,
-    (attemptMsqAnswer) => attemptMsqAnswer.attempt,
+    (attemptMsqAnswer) => attemptMsqAnswer.question,
   )
   attemptMsqAnswers: Relation<AttemptMsqAnswer>[];
 

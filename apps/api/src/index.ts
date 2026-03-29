@@ -5,6 +5,7 @@ import {
 } from '@nestjs/platform-fastify';
 import { AppModule } from './app.module';
 import { AppConfiguration } from './config/app.config';
+import { ValidationPipe } from '@nestjs/common/pipes/validation.pipe';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestFastifyApplication>(
@@ -15,6 +16,12 @@ async function bootstrap() {
   const appConfiguration = app.get(AppConfiguration);
 
   app.listen(appConfiguration.port);
+  app.useGlobalPipes(
+  new ValidationPipe({
+    whitelist: true,
+    transform: true,
+  }),
+);
 }
 
 bootstrap();
