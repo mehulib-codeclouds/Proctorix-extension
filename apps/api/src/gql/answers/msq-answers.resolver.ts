@@ -14,14 +14,17 @@ import { MsqOption } from '/entities/msq-option.entity';
 import type { User } from '/entities/user.entity';
 import { MSQAnswerService } from '/exam/answers/msq-answer.service';
 import { Question } from '../../entities/question.entity';
-import type { CreateMSQAnswerInput } from './inputs/create-msq-answer';
-import type { UpdateMSQAnswerInput } from './inputs/update-msq-answer';
+import { CreateMSQAnswerInput } from './inputs/create-msq-answer';
+import { UpdateMSQAnswerInput } from './inputs/update-msq-answer';
+import { QuestionsService } from '/exam/questions/questions.service';
 
 @Resolver(() => MsqAnswer)
 export class MSQAnswersResolver {
   constructor(
     @Inject(MSQAnswerService)
     private readonly msqAnswerService: MSQAnswerService,
+    @Inject(QuestionsService)
+    private readonly questionService: QuestionsService
   ) {}
 
   //Mutations
@@ -87,7 +90,7 @@ export class MSQAnswersResolver {
   //Resolve fields
   @ResolveField(() => Question)
   Question(@Parent() msqAnswer: MsqAnswer) {
-    return this.questionService.getQuestion(msqAnswer.questionId);
+    return this.questionService.getQuestions(msqAnswer.questionId);
   }
 
   @ResolveField(() => MsqOption)

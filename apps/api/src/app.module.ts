@@ -3,6 +3,8 @@ import { ApolloDriver, type ApolloDriverConfig } from '@nestjs/apollo';
 import { Module } from '@nestjs/common';
 import { GraphQLModule } from '@nestjs/graphql';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ProctorEvent } from './entities/proctor-event.entity';
+import { ProctoringModule } from './proctoring/proctoring.module';
 
 import { AuthModule } from './auth/auth.module';
 import { AppConfiguration } from './config/app.config';
@@ -39,6 +41,7 @@ import { GqlModule } from './gql/gql.module';
           MsqAnswer,
           AttemptMcqAnswer,
           AttemptMsqAnswer,
+          ProctorEvent,
         ],
       }),
       inject: [AppConfiguration],
@@ -57,6 +60,7 @@ import { GqlModule } from './gql/gql.module';
     GqlModule,
 
     AuthModule,
+    ProctoringModule,
   ],
 })
 export class AppModule {}

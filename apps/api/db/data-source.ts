@@ -1,3 +1,4 @@
+import 'dotenv/config';   // ← add this line
 import { DataSource } from 'typeorm';
 
 export const AppDataSource = new DataSource({

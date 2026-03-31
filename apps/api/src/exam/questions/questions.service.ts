@@ -8,7 +8,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import type { Repository } from 'typeorm';
 import { Question, type QuestionType } from '/entities/question.entity';
 import { UserRole } from '/entities/user.entity';
-import type { ExamsService } from '/exam/exams/exams.service';
+import { ExamsService } from '/exam/exams/exams.service';
 
 @Injectable()
 export class QuestionsService {
@@ -21,14 +21,10 @@ export class QuestionsService {
 
   async getQuestions({
     examId,
-    userId,
-    role,
   }: {
     examId: string;
-    userId: string;
-    role: UserRole;
   }): Promise<Question[]> {
-    await this.examsService.getExamById({ id: examId, userId, role });
+    await this.examsService.getExamById({ id: examId });
 
     return this.questionsRepo.find({
       where: { exam: { id: examId } },
