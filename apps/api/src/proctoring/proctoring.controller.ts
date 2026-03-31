@@ -25,14 +25,12 @@ export class ProctoringController {
     @Body() body: BatchEventDto,
     @Headers('authorization') auth: string,
   ) {
-    // Verify session from Authorization header
     const sessionId = auth?.replace('Bearer ', '');
     if (!sessionId) throw new UnauthorizedException();
 
     const session = await this.sessionsService.findOne(sessionId);
     if (!session) throw new UnauthorizedException();
 
-    // Save all events — fire and forget style per event
     const results = await Promise.allSettled(
       body.events.map((e) =>
         this.proctoringService.recordEvent({

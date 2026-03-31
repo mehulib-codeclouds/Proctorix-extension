@@ -1,5 +1,3 @@
-// popup.js — runs in the extension popup
-
 const root = document.getElementById('root');
 
 function render(state, socketConnected, eventCounts) {
@@ -34,15 +32,12 @@ function render(state, socketConnected, eventCounts) {
   });
 }
 
-// Get current state from background
 chrome.runtime.sendMessage({ type: 'GET_STATE' }, (state) => {
-  // Retrieve event counts from storage
   chrome.storage.local.get(['eventCounts'], (data) => {
     render(state, false, data.eventCounts ?? {});
   });
 });
 
-// Listen for live updates while popup is open
 chrome.runtime.onMessage.addListener((msg) => {
   if (msg.type === 'SOCKET_STATUS') {
     chrome.runtime.sendMessage({ type: 'GET_STATE' }, (state) => {

@@ -1,10 +1,6 @@
-// content.js — injected into the exam page
-
-// ─── Browser API polyfill (inline, Chrome-safe) ───────────────────────────
 (function () {
   if (typeof globalThis.browser !== 'undefined') return;
-  // On Chrome, 'chrome' exists but 'browser' does not.
-  // This wraps chrome.* so all our code can use browser.* uniformly.
+  
   if (typeof chrome === 'undefined' || !chrome.runtime) return;
 
   const wrap = (api) =>
@@ -17,9 +13,9 @@
         if (typeof val === 'function') {
           return function (...args) {
             const last = args[args.length - 1];
-            // Already has a callback — pass through unchanged
+            
             if (typeof last === 'function') return val.apply(target, args);
-            // No callback — return a Promise
+            
             return new Promise((resolve, reject) => {
               val.apply(target, [
                 ...args,
@@ -39,37 +35,37 @@
   globalThis.browser = wrap(chrome);
 })();
 
-// ─── Main proctoring logic ────────────────────────────────────────────────
+ 
 (function () {
   let proctoringActive = false;
   let overlayEl = null;
   let toastEl = null;
   let warningCount = { tabSwitch: 0, fullscreen: 0, blur: 0 };
 
-  // ─── Helper: safely send message to background ────────────────────────────
+  
   function sendToBackground(msg) {
     if (typeof browser === 'undefined') return;
     try {
       const p = browser.runtime.sendMessage(msg);
       if (p && typeof p.catch === 'function') p.catch(() => {});
     } catch (_) {
-      // Extension context invalidated — ignore
+      
     }
   }
 
-  // ─── Helper: send proctoring event ────────────────────────────────────────
+  
   function sendEvent(eventType, metadata) {
     sendToBackground({ type: 'PROCTOR_EVENT', eventType, metadata });
   }
 
-  // ─── Helper: request fullscreen ───────────────────────────────────────────
+  
   function requestFullscreen() {
     if (!document.fullscreenElement) {
       document.documentElement.requestFullscreen().catch(() => {});
     }
   }
 
-  // ─── Helper: inject animation styles ─────────────────────────────────────
+  
   function injectStyles() {
     if (document.getElementById('proctorix-styles')) return;
     const s = document.createElement('style');
@@ -83,7 +79,7 @@
     document.head.appendChild(s);
   }
 
-  // ─── Helper: show warning overlay ────────────────────────────────────────
+  
   function showWarningOverlay(reason, count) {
     // Update count on existing overlay of same type
     if (overlayEl && overlayEl.dataset.reason === reason) {
@@ -163,7 +159,7 @@
     document.body.appendChild(overlayEl);
   }
 
-  // ─── Helper: remove overlay ───────────────────────────────────────────────
+  
   function removeOverlay() {
     if (overlayEl) {
       overlayEl.remove();
@@ -171,7 +167,7 @@
     }
   }
 
-  // ─── Helper: show toast ───────────────────────────────────────────────────
+  
   function showToast(msg) {
     if (toastEl) toastEl.remove();
     toastEl = document.createElement('div');
@@ -190,7 +186,7 @@
     }, 3000);
   }
 
-  // ─── Listen for start/stop from exam page via postMessage ────────────────
+  
   window.addEventListener('message', function (e) {
     if (e.source !== window) return;
 
@@ -212,7 +208,7 @@
     }
   });
 
-  // ─── Listen for messages from background.js ───────────────────────────────
+  
   if (typeof browser !== 'undefined') {
     browser.runtime.onMessage.addListener(function (msg) {
       if (msg.type === 'SHOW_TAB_WARNING') {
@@ -222,7 +218,7 @@
     });
   }
 
-  // ─── Tab visibility change ────────────────────────────────────────────────
+  
   document.addEventListener('visibilitychange', function () {
     if (!proctoringActive) return;
     if (document.hidden) {
@@ -231,7 +227,7 @@
     }
   });
 
-  // ─── Out of focus — Alt+Tab / clicking other apps ─────────────────────────
+  
   window.addEventListener('blur', function () {
     if (!proctoringActive) return;
     warningCount.blur++;
@@ -246,7 +242,6 @@
     }
   });
 
-  // ─── Fullscreen enforcement ───────────────────────────────────────────────
   document.addEventListener('fullscreenchange', function () {
     if (!proctoringActive) return;
     if (!document.fullscreenElement) {
@@ -259,7 +254,7 @@
     }
   });
 
-  // ─── Right-click block ────────────────────────────────────────────────────
+  
   document.addEventListener('contextmenu', function (e) {
     if (!proctoringActive) return;
     e.preventDefault();
@@ -268,7 +263,7 @@
     showToast('Right-click is disabled during the exam.');
   }, true);
 
-  // ─── Copy / Cut / Paste block ─────────────────────────────────────────────
+  
   document.addEventListener('copy', function (e) {
     if (!proctoringActive) return;
     e.preventDefault();
@@ -293,7 +288,7 @@
     showToast('Pasting is disabled during the exam.');
   }, true);
 
-  // ─── Keyboard shortcut blocks ─────────────────────────────────────────────
+  
   document.addEventListener('keydown', function (e) {
     if (!proctoringActive) return;
 

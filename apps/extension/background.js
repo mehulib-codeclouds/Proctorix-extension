@@ -1,11 +1,6 @@
-// background.js — service worker (MV3)
-// Uses browser.* API (polyfilled for Chrome)
-// Events are queued locally and flushed in batches via HTTP POST
-// This is far more scalable than WebSocket for mass exams
-
-const BACKEND_URL = 'http://localhost:3000'; // change for production
-const FLUSH_INTERVAL_SECONDS = 5;            // flush every 5 seconds
-const MAX_QUEUE_SIZE = 50;                   // flush immediately if queue hits this
+const BACKEND_URL = 'http://localhost:3000'; 
+const FLUSH_INTERVAL_SECONDS = 5;            
+const MAX_QUEUE_SIZE = 50;                   
 
 let proctoringState = {
   active: false,
@@ -16,7 +11,6 @@ let proctoringState = {
 let eventQueue = [];
 let isFlushScheduled = false;
 
-// ─── Queue an event locally ───────────────────────────────────────────────
 function queueEvent(eventType, metadata = {}) {
   if (!proctoringState.active || !proctoringState.attemptId) return;
 
@@ -28,7 +22,6 @@ function queueEvent(eventType, metadata = {}) {
     occurredAt: new Date().toISOString(),
   });
 
-  // Save queue to storage so it survives service worker sleep
   browser.storage.local.set({ eventQueue });
 
   // Flush immediately if queue is getting large
@@ -37,7 +30,6 @@ function queueEvent(eventType, metadata = {}) {
   }
 }
 
-// ─── Flush queued events to backend via HTTP POST ────────────────────────
 async function flushEvents() {
   if (eventQueue.length === 0) return;
 
@@ -56,20 +48,17 @@ async function flushEvents() {
     });
 
     if (!response.ok) {
-      // Put failed events back at front of queue to retry
       eventQueue = [...toSend, ...eventQueue];
       browser.storage.local.set({ eventQueue });
       console.warn('[Proctorix] Batch flush failed, will retry:', response.status);
     }
   } catch (err) {
-    // Network error — put events back to retry next flush
     eventQueue = [...toSend, ...eventQueue];
     browser.storage.local.set({ eventQueue });
     console.warn('[Proctorix] Batch flush network error, will retry:', err.message);
   }
 }
 
-// ─── Schedule periodic flush using chrome.alarms (survives SW sleep) ─────
 function scheduleFlush() {
   if (isFlushScheduled) return;
   isFlushScheduled = true;
@@ -89,7 +78,6 @@ browser.alarms.onAlarm.addListener((alarm) => {
   }
 });
 
-// ─── Close all other tabs when exam starts ────────────────────────────────
 async function closeOtherTabs(examTabId) {
   const allTabs = await browser.tabs.query({});
   const tabsToClose = allTabs
@@ -101,7 +89,6 @@ async function closeOtherTabs(examTabId) {
   }
 }
 
-// ─── Message handler ──────────────────────────────────────────────────────
 browser.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   (async () => {
     switch (msg.type) {
@@ -115,12 +102,10 @@ browser.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         };
         await browser.storage.local.set(proctoringState);
 
-        // Close all other tabs immediately
         if (proctoringState.examTabId) {
           await closeOtherTabs(proctoringState.examTabId);
         }
 
-        // Restore any unsent events from storage (service worker may have slept)
         const stored = await browser.storage.local.get(['eventQueue']);
         if (stored.eventQueue?.length) {
           eventQueue = [...stored.eventQueue, ...eventQueue];
@@ -134,7 +119,6 @@ browser.runtime.onMessage.addListener((msg, sender, sendResponse) => {
 
       case 'STOP_PROCTORING': {
         queueEvent('exam_ended', { timestamp: new Date().toISOString() });
-        // Flush immediately on exam end — don't wait for next interval
         await flushEvents();
         stopFlush();
         proctoringState = { active: false, attemptId: null, sessionId: null };
@@ -162,30 +146,25 @@ browser.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       }
     }
   })();
-  return true; // keep channel open for async
+  return true; 
 });
 
-// ─── Block tab switching during exam ─────────────────────────────────────
-// If user tries to switch to another tab, immediately switch back
+
 browser.tabs.onActivated.addListener(async (activeInfo) => {
   if (!proctoringState.active) return;
   if (!proctoringState.examTabId) return;
 
   if (activeInfo.tabId !== proctoringState.examTabId) {
-    // They switched away — record it and force back
     queueEvent('tab_switch', { toTabId: activeInfo.tabId });
 
-    // Switch back to exam tab
     await browser.tabs.update(proctoringState.examTabId, { active: true });
 
-    // Tell the exam tab's content script to show warning
     browser.tabs.sendMessage(proctoringState.examTabId, {
       type: 'SHOW_TAB_WARNING',
     });
   }
 });
 
-// ─── Restore state on service worker restart ─────────────────────────────
 browser.storage.local.get(
   ['active', 'attemptId', 'sessionId', 'examTabId', 'eventQueue'],
   (data) => {
