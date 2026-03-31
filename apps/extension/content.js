@@ -1,55 +1,266 @@
 // content.js — injected into the exam page
-// Monitors all browser-level events and forwards them to background.js
 
+// ─── Browser API polyfill (inline, Chrome-safe) ───────────────────────────
+(function () {
+  if (typeof globalThis.browser !== 'undefined') return;
+  // On Chrome, 'chrome' exists but 'browser' does not.
+  // This wraps chrome.* so all our code can use browser.* uniformly.
+  if (typeof chrome === 'undefined' || !chrome.runtime) return;
+
+  const wrap = (api) =>
+    new Proxy(api, {
+      get(target, prop) {
+        const val = target[prop];
+        if (val && typeof val === 'object' && !Array.isArray(val)) {
+          return wrap(val);
+        }
+        if (typeof val === 'function') {
+          return function (...args) {
+            const last = args[args.length - 1];
+            // Already has a callback — pass through unchanged
+            if (typeof last === 'function') return val.apply(target, args);
+            // No callback — return a Promise
+            return new Promise((resolve, reject) => {
+              val.apply(target, [
+                ...args,
+                (result) => {
+                  const err = chrome.runtime.lastError;
+                  if (err) reject(new Error(err.message));
+                  else resolve(result);
+                },
+              ]);
+            });
+          };
+        }
+        return val;
+      },
+    });
+
+  globalThis.browser = wrap(chrome);
+})();
+
+// ─── Main proctoring logic ────────────────────────────────────────────────
 (function () {
   let proctoringActive = false;
-  let warningCount = { tabSwitch: 0, fullscreen: 0 };
+  let overlayEl = null;
+  let toastEl = null;
+  let warningCount = { tabSwitch: 0, fullscreen: 0, blur: 0 };
 
-  // ─── Listen for start/stop commands from the exam page ───────────────────
-  window.addEventListener('message', (e) => {
-    if (e.source !== window) return;
-    if (e.data?.type === 'PROCTORIX_START') {
-      proctoringActive = true;
-      requestFullscreen();
-      injectStyles();
+  // ─── Helper: safely send message to background ────────────────────────────
+  function sendToBackground(msg) {
+    if (typeof browser === 'undefined') return;
+    try {
+      const p = browser.runtime.sendMessage(msg);
+      if (p && typeof p.catch === 'function') p.catch(() => {});
+    } catch (_) {
+      // Extension context invalidated — ignore
     }
-    if (e.data?.type === 'PROCTORIX_STOP') {
+  }
+
+  // ─── Helper: send proctoring event ────────────────────────────────────────
+  function sendEvent(eventType, metadata) {
+    sendToBackground({ type: 'PROCTOR_EVENT', eventType, metadata });
+  }
+
+  // ─── Helper: request fullscreen ───────────────────────────────────────────
+  function requestFullscreen() {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch(() => {});
+    }
+  }
+
+  // ─── Helper: inject animation styles ─────────────────────────────────────
+  function injectStyles() {
+    if (document.getElementById('proctorix-styles')) return;
+    const s = document.createElement('style');
+    s.id = 'proctorix-styles';
+    s.textContent = `
+      @keyframes proctorix-fadein {
+        from { opacity:0; transform:translateY(8px); }
+        to   { opacity:1; transform:none; }
+      }
+    `;
+    document.head.appendChild(s);
+  }
+
+  // ─── Helper: show warning overlay ────────────────────────────────────────
+  function showWarningOverlay(reason, count) {
+    // Update count on existing overlay of same type
+    if (overlayEl && overlayEl.dataset.reason === reason) {
+      const countEl = overlayEl.querySelector('#proctorix-count');
+      if (countEl) countEl.textContent = 'Warning ' + count + ' recorded';
+      return;
+    }
+    removeOverlay();
+
+    var configs = {
+      fullscreen: {
+        icon: '⛔',
+        title: 'Fullscreen Required',
+        message: 'You exited fullscreen. This violation has been recorded. Return to fullscreen to continue.',
+        btnText: 'Return to fullscreen',
+        btnAction: function () { requestFullscreen(); },
+      },
+      tab: {
+        icon: '⚠️',
+        title: 'Tab Switching Detected',
+        message: 'You attempted to switch tabs. This violation has been recorded. Stay on the exam tab.',
+        btnText: 'I understand',
+        btnAction: function () { removeOverlay(); },
+      },
+      blur: {
+        icon: '👁️',
+        title: 'Focus Lost',
+        message: 'You switched to another application. This violation has been recorded. Return to the exam.',
+        btnText: 'I am back',
+        btnAction: function () { removeOverlay(); },
+      },
+    };
+
+    var c = configs[reason] || configs.fullscreen;
+
+    overlayEl = document.createElement('div');
+    overlayEl.id = 'proctorix-overlay';
+    overlayEl.dataset.reason = reason;
+
+    var inner = document.createElement('div');
+    inner.style.cssText = [
+      'position:fixed', 'top:0', 'left:0', 'width:100vw', 'height:100vh',
+      'background:rgba(0,0,0,0.88)', 'display:flex', 'flex-direction:column',
+      'align-items:center', 'justify-content:center', 'z-index:2147483647',
+      'font-family:sans-serif', 'color:#fff',
+    ].join(';');
+
+    var iconEl = document.createElement('div');
+    iconEl.style.cssText = 'font-size:52px;margin-bottom:16px;';
+    iconEl.textContent = c.icon;
+
+    var titleEl = document.createElement('div');
+    titleEl.style.cssText = 'font-size:22px;font-weight:700;margin-bottom:10px;';
+    titleEl.textContent = c.title;
+
+    var msgEl = document.createElement('div');
+    msgEl.style.cssText = 'font-size:15px;color:#ccc;margin-bottom:28px;max-width:400px;text-align:center;line-height:1.6;';
+    msgEl.textContent = c.message;
+
+    var btn = document.createElement('button');
+    btn.id = 'proctorix-overlay-btn';
+    btn.style.cssText = 'background:#fff;color:#111;border:none;padding:11px 32px;font-size:15px;border-radius:8px;cursor:pointer;font-weight:700;';
+    btn.textContent = c.btnText;
+    btn.addEventListener('click', c.btnAction);
+
+    var countEl = document.createElement('div');
+    countEl.id = 'proctorix-count';
+    countEl.style.cssText = 'margin-top:14px;font-size:12px;color:#888;';
+    countEl.textContent = 'Warning ' + count + ' recorded';
+
+    inner.appendChild(iconEl);
+    inner.appendChild(titleEl);
+    inner.appendChild(msgEl);
+    inner.appendChild(btn);
+    inner.appendChild(countEl);
+    overlayEl.appendChild(inner);
+    document.body.appendChild(overlayEl);
+  }
+
+  // ─── Helper: remove overlay ───────────────────────────────────────────────
+  function removeOverlay() {
+    if (overlayEl) {
+      overlayEl.remove();
+      overlayEl = null;
+    }
+  }
+
+  // ─── Helper: show toast ───────────────────────────────────────────────────
+  function showToast(msg) {
+    if (toastEl) toastEl.remove();
+    toastEl = document.createElement('div');
+    toastEl.style.cssText = [
+      'position:fixed', 'bottom:24px', 'right:24px',
+      'background:#1a1a1a', 'color:#fff',
+      'padding:10px 18px', 'border-radius:8px',
+      'font-family:sans-serif', 'font-size:14px',
+      'z-index:2147483647', 'box-shadow:0 4px 12px rgba(0,0,0,0.3)',
+      'animation:proctorix-fadein 0.2s ease',
+    ].join(';');
+    toastEl.textContent = msg;
+    document.body.appendChild(toastEl);
+    setTimeout(function () {
+      if (toastEl) { toastEl.remove(); toastEl = null; }
+    }, 3000);
+  }
+
+  // ─── Listen for start/stop from exam page via postMessage ────────────────
+  window.addEventListener('message', function (e) {
+    if (e.source !== window) return;
+
+    if (e.data && e.data.type === 'PROCTORIX_START') {
+      proctoringActive = true;
+      injectStyles();
+      requestFullscreen();
+      sendToBackground({
+        type: 'START_PROCTORING',
+        attemptId: e.data.attemptId || null,
+        sessionId: e.data.sessionId || null,
+      });
+    }
+
+    if (e.data && e.data.type === 'PROCTORIX_STOP') {
       proctoringActive = false;
+      sendToBackground({ type: 'STOP_PROCTORING' });
       removeOverlay();
     }
   });
 
-  // ─── Tab visibility (candidate switches tabs) ─────────────────────────────
-  document.addEventListener('visibilitychange', () => {
+  // ─── Listen for messages from background.js ───────────────────────────────
+  if (typeof browser !== 'undefined') {
+    browser.runtime.onMessage.addListener(function (msg) {
+      if (msg.type === 'SHOW_TAB_WARNING') {
+        warningCount.tabSwitch++;
+        showWarningOverlay('tab', warningCount.tabSwitch);
+      }
+    });
+  }
+
+  // ─── Tab visibility change ────────────────────────────────────────────────
+  document.addEventListener('visibilitychange', function () {
     if (!proctoringActive) return;
     if (document.hidden) {
-      sendEvent('tab_switch', { hidden: true });
       warningCount.tabSwitch++;
-      // Content script can't show overlay when hidden — backend records it
+      sendEvent('tab_switch', { hidden: true });
     }
   });
 
-  // ─── Window blur (alt-tab, clicking outside browser) ─────────────────────
-  window.addEventListener('blur', () => {
+  // ─── Out of focus — Alt+Tab / clicking other apps ─────────────────────────
+  window.addEventListener('blur', function () {
     if (!proctoringActive) return;
-    sendEvent('window_blur', {});
+    warningCount.blur++;
+    sendEvent('window_blur', { count: warningCount.blur });
+    showWarningOverlay('blur', warningCount.blur);
   });
 
-  // ─── Fullscreen check ─────────────────────────────────────────────────────
-  document.addEventListener('fullscreenchange', () => {
+  window.addEventListener('focus', function () {
     if (!proctoringActive) return;
-    if (!document.fullscreenElement) {
-      sendEvent('fullscreen_exit', {});
-      warningCount.fullscreen++;
-      showWarningOverlay('fullscreen');
-    } else {
-      sendEvent('fullscreen_enter', {});
+    if (overlayEl && overlayEl.dataset.reason === 'blur') {
       removeOverlay();
     }
   });
 
-  // ─── Right-click block + record ───────────────────────────────────────────
-  document.addEventListener('contextmenu', (e) => {
+  // ─── Fullscreen enforcement ───────────────────────────────────────────────
+  document.addEventListener('fullscreenchange', function () {
+    if (!proctoringActive) return;
+    if (!document.fullscreenElement) {
+      warningCount.fullscreen++;
+      sendEvent('fullscreen_exit', { count: warningCount.fullscreen });
+      showWarningOverlay('fullscreen', warningCount.fullscreen);
+    } else {
+      sendEvent('fullscreen_enter', {});
+      if (overlayEl && overlayEl.dataset.reason === 'fullscreen') removeOverlay();
+    }
+  });
+
+  // ─── Right-click block ────────────────────────────────────────────────────
+  document.addEventListener('contextmenu', function (e) {
     if (!proctoringActive) return;
     e.preventDefault();
     e.stopPropagation();
@@ -57,109 +268,48 @@
     showToast('Right-click is disabled during the exam.');
   }, true);
 
-  // ─── Copy/paste intercept ─────────────────────────────────────────────────
-  document.addEventListener('copy', (e) => {
+  // ─── Copy / Cut / Paste block ─────────────────────────────────────────────
+  document.addEventListener('copy', function (e) {
     if (!proctoringActive) return;
     e.preventDefault();
+    e.stopImmediatePropagation();
     sendEvent('copy_attempt', {});
     showToast('Copying is disabled during the exam.');
   }, true);
 
-  document.addEventListener('paste', (e) => {
+  document.addEventListener('cut', function (e) {
     if (!proctoringActive) return;
     e.preventDefault();
+    e.stopImmediatePropagation();
+    sendEvent('copy_attempt', { action: 'cut' });
+    showToast('Cutting is disabled during the exam.');
+  }, true);
+
+  document.addEventListener('paste', function (e) {
+    if (!proctoringActive) return;
+    e.preventDefault();
+    e.stopImmediatePropagation();
     sendEvent('paste_attempt', {});
     showToast('Pasting is disabled during the exam.');
   }, true);
 
-  // ─── Keyboard shortcuts block (PrintScreen, etc.) ─────────────────────────
-  document.addEventListener('keydown', (e) => {
+  // ─── Keyboard shortcut blocks ─────────────────────────────────────────────
+  document.addEventListener('keydown', function (e) {
     if (!proctoringActive) return;
-    // Block common cheating shortcuts
-    if (
+
+    var blocked =
       e.key === 'PrintScreen' ||
-      (e.ctrlKey && e.shiftKey && e.key === 'I') || // DevTools
-      (e.ctrlKey && e.shiftKey && e.key === 'J') || // Console
-      (e.ctrlKey && e.key === 'U')                  // View Source
-    ) {
+      e.key === 'F12' ||
+      (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J')) ||
+      (e.ctrlKey && e.key === 'U') ||
+      (e.metaKey && e.shiftKey && (e.key === 'I' || e.key === 'J'));
+
+    if (blocked) {
       e.preventDefault();
-      sendEvent('copy_attempt', { key: e.key });
+      e.stopImmediatePropagation();
+      sendEvent('copy_attempt', { key: e.key, reason: 'blocked_shortcut' });
+      showToast('This action is not allowed during the exam.');
     }
   }, true);
 
-  // ─── Helpers ──────────────────────────────────────────────────────────────
-  function sendEvent(eventType, metadata) {
-    chrome.runtime.sendMessage({
-      type: 'PROCTOR_EVENT',
-      eventType,
-      metadata,
-    });
-  }
-
-  function requestFullscreen() {
-    if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen().catch(() => {});
-    }
-  }
-
-  let overlayEl = null;
-
-  function showWarningOverlay(reason) {
-    removeOverlay();
-    overlayEl = document.createElement('div');
-    overlayEl.id = 'proctorix-overlay';
-    overlayEl.innerHTML = `
-      <div style="
-        position:fixed;top:0;left:0;width:100vw;height:100vh;
-        background:rgba(0,0,0,0.82);display:flex;flex-direction:column;
-        align-items:center;justify-content:center;z-index:2147483647;
-        font-family:sans-serif;color:#fff;
-      ">
-        <div style="font-size:48px;margin-bottom:16px;">⚠️</div>
-        <div style="font-size:22px;font-weight:600;margin-bottom:8px;">Fullscreen Required</div>
-        <div style="font-size:15px;color:#ccc;margin-bottom:24px;max-width:360px;text-align:center;">
-          You have exited fullscreen. This incident has been recorded.
-          Please return to fullscreen to continue your exam.
-        </div>
-        <button id="proctorix-return-btn" style="
-          background:#fff;color:#111;border:none;padding:10px 28px;
-          font-size:15px;border-radius:8px;cursor:pointer;font-weight:600;
-        ">Return to fullscreen</button>
-        <div style="margin-top:12px;font-size:12px;color:#888;">
-          Warning ${warningCount.fullscreen} recorded
-        </div>
-      </div>
-    `;
-    document.body.appendChild(overlayEl);
-    overlayEl.querySelector('#proctorix-return-btn').addEventListener('click', () => {
-      requestFullscreen();
-    });
-  }
-
-  function removeOverlay() {
-    if (overlayEl) { overlayEl.remove(); overlayEl = null; }
-  }
-
-  let toastEl = null;
-  function showToast(msg) {
-    if (toastEl) toastEl.remove();
-    toastEl = document.createElement('div');
-    toastEl.style.cssText = `
-      position:fixed;bottom:24px;right:24px;background:#1a1a1a;color:#fff;
-      padding:10px 18px;border-radius:8px;font-family:sans-serif;font-size:14px;
-      z-index:2147483647;box-shadow:0 4px 12px rgba(0,0,0,0.3);
-      animation: fadeIn 0.2s ease;
-    `;
-    toastEl.textContent = msg;
-    document.body.appendChild(toastEl);
-    setTimeout(() => { toastEl?.remove(); toastEl = null; }, 3000);
-  }
-
-  function injectStyles() {
-    if (document.getElementById('proctorix-styles')) return;
-    const s = document.createElement('style');
-    s.id = 'proctorix-styles';
-    s.textContent = `@keyframes fadeIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:none; } }`;
-    document.head.appendChild(s);
-  }
 })();
