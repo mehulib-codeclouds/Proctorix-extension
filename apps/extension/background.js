@@ -24,7 +24,6 @@ function queueEvent(eventType, metadata = {}) {
 
   browser.storage.local.set({ eventQueue });
 
-  // Flush immediately if queue is getting large
   if (eventQueue.length >= MAX_QUEUE_SIZE) {
     flushEvents();
   }
