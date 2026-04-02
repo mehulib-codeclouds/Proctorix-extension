@@ -19,7 +19,7 @@
   },
   "content_scripts": [
   {
-    "matches": ["http://localhost:*/*", "https://yourdomain.com/*"],
+    "matches": ["http://localhost:*/*", "https://yourdomain.com/*","https://yourdomain.com/*"],
     "js": ["content.js"],
     "run_at": "document_start"
   }
