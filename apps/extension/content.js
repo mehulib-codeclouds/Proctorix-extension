@@ -41,7 +41,7 @@
   let overlayEl = null;
   let toastEl = null;
   let warningCount = { tabSwitch: 0, fullscreen: 0, blur: 0 };
-
+  let totalWarnings = 0;
   
   function sendToBackground(msg) {
     if (typeof browser === 'undefined') return;
@@ -213,7 +213,8 @@
     browser.runtime.onMessage.addListener(function (msg) {
       if (msg.type === 'SHOW_TAB_WARNING') {
         warningCount.tabSwitch++;
-        showWarningOverlay('tab', warningCount.tabSwitch);
+        totalWarnings++;
+        showWarningOverlay('tab', totalWarnings);
       }
     });
   }
@@ -223,6 +224,7 @@
     if (!proctoringActive) return;
     if (document.hidden) {
       warningCount.tabSwitch++;
+      totalWarnings++;
       sendEvent('tab_switch', { hidden: true });
     }
   });
@@ -231,8 +233,9 @@
   window.addEventListener('blur', function () {
     if (!proctoringActive) return;
     warningCount.blur++;
+    totalWarnings++;
     sendEvent('window_blur', { count: warningCount.blur });
-    showWarningOverlay('blur', warningCount.blur);
+    showWarningOverlay('blur', totalWarnings);
   });
 
   window.addEventListener('focus', function () {
@@ -246,8 +249,9 @@
     if (!proctoringActive) return;
     if (!document.fullscreenElement) {
       warningCount.fullscreen++;
+      totalWarnings++;
       sendEvent('fullscreen_exit', { count: warningCount.fullscreen });
-      showWarningOverlay('fullscreen', warningCount.fullscreen);
+      showWarningOverlay('fullscreen', totalWarnings);
     } else {
       sendEvent('fullscreen_enter', {});
       if (overlayEl && overlayEl.dataset.reason === 'fullscreen') removeOverlay();
